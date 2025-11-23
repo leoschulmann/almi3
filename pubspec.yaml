@@ -39,6 +39,9 @@ dependencies:
   drift_flutter: ^0.2.7
   path_provider: ^2.1.5
   dio: ^5.9.0
+  path: ^1.9.1
+  sqlite3: ^2.9.4
+  sqlite3_flutter_libs: ^0.5.40
 
 dev_dependencies:
   flutter_test:
