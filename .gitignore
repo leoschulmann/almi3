@@ -145,4 +145,4 @@ Thumbs.db
 # Local env files (for secrets)
 .env.local
 .env.*.local
-/lib/model/db/db.g.dart
+/**/*.g.dart
