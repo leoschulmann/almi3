@@ -13,11 +13,7 @@ class RootDto {
   @JsonKey(name: 'ver')
   final int version;
 
-  RootDto({
-    required this.id,
-    required this.value,
-    required this.version,
-  });
+  RootDto({required this.id, required this.value, required this.version});
 
   factory RootDto.fromJson(Map<String, dynamic> json) =>
       _$RootDtoFromJson(json);

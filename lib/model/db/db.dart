@@ -13,8 +13,7 @@ part 'db.g.dart';
 
 @DriftDatabase(tables: [RootTable, VerbTable])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor])
-    : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;

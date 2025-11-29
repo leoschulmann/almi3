@@ -24,5 +24,30 @@ linter:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
+dart_code_metrics:
+  metrics:
+    lines-for-function: 50
+    lines-for-file: 300
+  metrics-exclude:
+    - test/**
+
+analyzer:
+  errors:
+    missing_required_param: warning
+    missing_return: warning
+    todo: ignore
+  exclude:
+    - "**.freezed.dart"
+    - "**.g.dart"
+
+# Dart formatting options
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+
+  # Line length for Dart formatter
+  # This sets the preferred line length for the Dart formatter to 120 characters
+  # IDEs like IntelliJ IDEA use this setting for code formatting
+
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

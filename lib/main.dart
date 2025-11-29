@@ -1,9 +1,8 @@
-import 'package:almi3/model/db/db.dart';
-import 'package:almi3/view/my_app.dart';
+import 'package:almi3/view/app.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final appDatabase = AppDatabase();
-  runApp(MyApp(database: appDatabase));
+  runApp(ProviderScope(child: App()));
 }
