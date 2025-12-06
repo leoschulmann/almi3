@@ -43,6 +43,7 @@ dependencies:
   sqlite3: ^2.9.4
   sqlite3_flutter_libs: ^0.5.40
   json_annotation: ^4.8.1
+  logger: ^2.6.2
 
 dev_dependencies:
   flutter_test:
