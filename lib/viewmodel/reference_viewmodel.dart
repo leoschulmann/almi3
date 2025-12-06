@@ -1,26 +1,11 @@
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/repository/root_repository.dart';
+import 'package:almi3/viewmodel/state/reference_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ReferencePageState {
-  final List<RootDto> roots;
-  final bool isLoading;
-  final bool hasMore;
-  final String? errMsg;
-
-  const ReferencePageState({this.roots = const [], this.isLoading = false, this.hasMore = true, this.errMsg});
-
-  ReferencePageState copyWith({List<RootDto>? roots, bool? isLoading, bool? hasMore, String? errMsg}) {
-    return ReferencePageState(
-      roots: roots ?? this.roots,
-      isLoading: isLoading ?? this.isLoading,
-      hasMore: hasMore ?? this.hasMore,
-      errMsg: errMsg ?? this.errMsg,
-    );
-  }
-}
+final NotifierProvider<ReferencePageNotifier, ReferencePageState> referencePageProvider =
+    NotifierProvider<ReferencePageNotifier, ReferencePageState>(ReferencePageNotifier.new);
 
 class ReferencePageNotifier extends Notifier<ReferencePageState> {
   late final RootRepository _repository;
@@ -40,11 +25,7 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
       logger.d('calling getRootsPaged with page=$_page, size=$_size');
       final rootsPaged = await _repository.getRootsPaged(_page, _size);
       logger.i('received ${rootsPaged.length} items');
-      state = state.copyWith(
-        roots: rootsPaged,
-        isLoading: false,
-        hasMore: rootsPaged.length == _size,
-      );
+      state = state.copyWith(roots: rootsPaged, isLoading: false, hasMore: rootsPaged.length == _size);
       logger.d('state updated: ${state.roots.length} roots, hasMore=${state.hasMore}');
     } catch (e, stackTrace) {
       logger.e('_loadInit() error', error: e, stackTrace: stackTrace);
@@ -63,11 +44,7 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
     try {
       final roots = await _repository.getRootsPaged(_page, _size);
       logger.i('loadMore: loaded ${roots.length} more items');
-      state = state.copyWith(
-        roots: [...state.roots, ...roots],
-        isLoading: false,
-        hasMore: roots.length == _size,
-      );
+      state = state.copyWith(roots: [...state.roots, ...roots], isLoading: false, hasMore: roots.length == _size);
     } catch (e, stackTrace) {
       _page--;
       logger.e('loadMore: error', error: e, stackTrace: stackTrace);
@@ -81,6 +58,3 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
     await _loadInit();
   }
 }
-
-final NotifierProvider<ReferencePageNotifier, ReferencePageState> referencePageProvider =
-    NotifierProvider<ReferencePageNotifier, ReferencePageState>(ReferencePageNotifier.new);
