@@ -1,6 +1,8 @@
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/dto/binyan_dto.dart';
 import 'package:almi3/model/dto/root_dto.dart';
+import 'package:almi3/model/repository/binyan_repository.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/viewmodel/state/sync_page_state.dart';
 import 'package:dio/dio.dart';
@@ -16,16 +18,24 @@ final Provider<RootRepository> rootRepositoryProvider = Provider(
   (ref) => RootRepository(ref.watch(appDatabaseProvider)),
 );
 
+Provider<BinyanRepository> binyanRepositoryProvider = Provider(
+        (ref) => BinyanRepository(database: ref.watch(appDatabaseProvider))
+);
+
+
 final NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState> rootViewmodelProvider =
     NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState>(SyncViewmodelNotifier.new);
 
 class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
   late final RootRepository _repository;
+  late final BinyanRepository _binyanRepository;
   final Dio _dio = Dio();
 
   @override
   SyncViewmodelState build() {
     _repository = ref.watch(rootRepositoryProvider);
+    _binyanRepository = ref.watch(binyanRepositoryProvider);
+    
     return const SyncViewmodelState();
   }
 
@@ -42,7 +52,18 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
           int totalUpdated = 0;
           int totalSkipped = 0;
           int batchNumber = 1;
-      
+          
+          List<BinyanDto> allBinyans = await _fetchBinyansFromApi();
+          if (allBinyans.isEmpty) {
+            logger.i("Backend returned empty binyan list");
+          } else {
+            SyncResult res = await _binyanRepository.upsertBinyans(allBinyans);
+            logger.i('Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}');
+            totalInserted += res.inserted;
+            totalUpdated += res.updated;
+            totalSkipped += res.skipped;
+          }
+          
           while (true) {
             logger.d('Fetching batch $batchNumber (page=$page, size=${AppConfig.batchSize})');
             final apiBatch = await _fetchRootsFromApi(page, AppConfig.batchSize);
@@ -111,6 +132,22 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       throw Exception('Failed to fetch: status code ${response.statusCode}');
     } catch (e, stackTrace) {
       logger.e('Error fetching roots from backend', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<List<BinyanDto>> _fetchBinyansFromApi() async {
+    try {
+      final url = '${AppConfig.backendUrl}${AppConfig.binyanEndpoint}';
+      logger.d('Fetching all binyans from $url');
+      final response = await _dio.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data as List<dynamic>;
+        return data.map((item) => BinyanDto.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      throw Exception('Failed to fetch binyans: status code ${response.statusCode}');
+    } catch (e, stackTrace) {
+      logger.e('Error fetching binyans from backend', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

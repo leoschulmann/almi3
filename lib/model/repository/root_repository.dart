@@ -1,14 +1,12 @@
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/db/db.dart';
 import 'package:almi3/model/dto/root_dto.dart';
-import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 
 import '../sync_result.dart';
 
 class RootRepository {
   final AppDatabase database;
-  final Dio dio = Dio();
 
   RootRepository(this.database);
 

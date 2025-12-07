@@ -5,6 +5,7 @@ class AppConfig {
 
   /// API endpoints
   static const String rootsEndpoint = '/api/root';
+  static const String binyanEndpoint = '/api/binyan';
 
   /// Batch size for fetching and processing roots from backend
   /// API calls will use this size for pagination (page size per request)

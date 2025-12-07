@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:almi3/model/db/tables/binyan_table.dart';
 import 'package:almi3/model/db/tables/root_table.dart';
 import 'package:almi3/model/db/tables/verb_table.dart';
 import 'package:drift/drift.dart';
@@ -11,7 +12,7 @@ import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 part 'db.g.dart';
 
-@DriftDatabase(tables: [RootTable, VerbTable])
+@DriftDatabase(tables: [RootTable, BinyanTable, VerbTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
