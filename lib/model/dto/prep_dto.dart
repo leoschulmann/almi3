@@ -7,7 +7,7 @@ class PrepositionDto {
   @JsonKey(name: "id")
   final int id;
 
-  @JsonKey(name: "b")
+  @JsonKey(name: "p")
   final String value;
 
   @JsonKey(name: "ver")

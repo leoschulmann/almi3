@@ -7,7 +7,7 @@ class GizrahDto {
   @JsonKey(name: "id")
   final int id;
 
-  @JsonKey(name: "b")
+  @JsonKey(name: "g")
   final String value;
 
   @JsonKey(name: "ver")
