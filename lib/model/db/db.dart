@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/db/tables/binyan_table.dart';
 import 'package:almi3/model/db/tables/gizrah_table.dart';
 import 'package:almi3/model/db/tables/prep_table.dart';
@@ -7,6 +8,7 @@ import 'package:almi3/model/db/tables/root_table.dart';
 import 'package:almi3/model/db/tables/verb_gizrah_table.dart';
 import 'package:almi3/model/db/tables/verb_prep_table.dart';
 import 'package:almi3/model/db/tables/verb_table.dart';
+import 'package:almi3/model/db/tables/verb_translation_table.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -17,13 +19,26 @@ import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 part 'db.g.dart';
 
 @DriftDatabase(
-  tables: [RootTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable],
+  tables: [RootTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
+  VerbTranslationTable],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      logger.i('onCreate: creating all tables...');
+      await m.createAll();
+      logger.i('onCreate: tables created successfully');
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      logger.i('onUpgrade: migrating from $from to $to');
+    },
+  );
 }
 
 LazyDatabase _openConnection() {
@@ -44,7 +59,7 @@ LazyDatabase _openConnection() {
     // Explicitly tell it about the correct temporary directory.
     sqlite3.tempDirectory = cachebase;
 
-    print('DB path: ${dbFolder.path}/almidb.sqlite');
+    logger.d('DB path: ${file.path}');
 
     return NativeDatabase.createInBackground(file);
   });
