@@ -1,3 +1,4 @@
+import 'package:almi3/core/config.dart';
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/db/db.dart';
 import 'package:almi3/model/dto/binyan_dto.dart';
@@ -5,19 +6,17 @@ import 'package:almi3/model/dto/gizrah_dto.dart';
 import 'package:almi3/model/dto/prep_dto.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
+import 'package:almi3/model/dto/verb_t9n_dto.dart';
 import 'package:almi3/model/repository/binyan_repository.dart';
+import 'package:almi3/model/repository/gizrah_repo.dart';
 import 'package:almi3/model/repository/prep_repo.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';
 import 'package:almi3/model/repository/verb_t9n_repository.dart';
+import 'package:almi3/model/sync_result.dart';
 import 'package:almi3/viewmodel/state/sync_page_state.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../core/config.dart';
-import '../model/dto/verb_t9n_dto.dart';
-import '../model/repository/gizrah_repo.dart';
-import '../model/sync_result.dart';
 
 final Provider<AppDatabase> appDatabaseProvider = Provider((ref) => AppDatabase());
 
@@ -25,21 +24,22 @@ final Provider<RootRepository> rootRepositoryProvider = Provider(
   (ref) => RootRepository(ref.watch(appDatabaseProvider)),
 );
 
-Provider<BinyanRepository> binyanRepositoryProvider = Provider(
+final Provider<BinyanRepository> binyanRepositoryProvider = Provider(
   (ref) => BinyanRepository(database: ref.watch(appDatabaseProvider)),
 );
 
-Provider<PrepositionRepository> prepositionRepositoryProvider = Provider(
+final Provider<PrepositionRepository> prepositionRepositoryProvider = Provider(
   (ref) => PrepositionRepository(database: ref.watch(appDatabaseProvider)),
 );
 
-Provider<GizrahRepository> gizrahRepositoryProvider = Provider(
+final Provider<GizrahRepository> gizrahRepositoryProvider = Provider(
   (ref) => GizrahRepository(database: ref.watch(appDatabaseProvider)),
 );
 
-Provider<VerbRepository> verbRepositoryProvider = Provider((ref) => VerbRepository(ref.watch(appDatabaseProvider)));
+final Provider<VerbRepository> verbRepositoryProvider = Provider(
+        (ref) => VerbRepository(ref.watch(appDatabaseProvider)));
 
-Provider<VerbTranslationRepository> verbTranslationRepositoryProvider = Provider(
+final Provider<VerbTranslationRepository> verbTranslationRepositoryProvider = Provider(
   (ref) => VerbTranslationRepository(ref.watch(appDatabaseProvider)),
 );
 
@@ -75,121 +75,28 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       final SyncResult result = await () async {
         try {
           logger.i('Starting batched fetch and upsert from backend');
-          int page = 0;
-          int totalInserted = 0;
-          int totalUpdated = 0;
-          int totalSkipped = 0;
-          int batchNumber = 1;
+          final List<BinyanDto> allBinyans = await _fetchBinyansFromApi();
+          final SyncResult syncBinyansRes = await _persistBinyans(allBinyans);
 
-          List<BinyanDto> allBinyans = await _fetchBinyansFromApi();
-          if (allBinyans.isEmpty) {
-            logger.i("Backend returned empty binyan list");
-          } else {
-            SyncResult res = await _binyanRepository.upsertBinyans(allBinyans);
-            logger.i(
-              'Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-            );
-            totalInserted += res.inserted;
-            totalUpdated += res.updated;
-            totalSkipped += res.skipped;
-          }
+          final List<PrepositionDto> allPrepositions = await _fetchPrepositionsFromApi();
+          final SyncResult syncPrepsRes = await _persistPrepositions(allPrepositions);
 
-          List<PrepositionDto> allPrepositions = await _fetchPrepositionsFromApi();
-          if (allPrepositions.isEmpty) {
-            logger.i("Backend returned empty preposition list");
-          } else {
-            SyncResult res = await _prepositionRepository.upsertPrepositions(allPrepositions);
-            logger.i(
-              'Upserting prepositions finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-            );
-            totalInserted += res.inserted;
-            totalUpdated += res.updated;
-            totalSkipped += res.skipped;
-          }
+          final List<GizrahDto> allGizrahs = await _fetchGizrahsFromApi();
+          final SyncResult syncGizrahsRes = await _persistGizrahs(allGizrahs);
 
-          List<GizrahDto> allGizrahs = await _fetchGizrahsFromApi();
-          if (allGizrahs.isEmpty) {
-            logger.i("Backend returned empty gizrah list");
-          } else {
-            SyncResult res = await _gizrahRepository.upsertGizrah(allGizrahs);
-            logger.i(
-              'Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-            );
-            totalInserted += res.inserted;
-            totalUpdated += res.updated;
-            totalSkipped += res.skipped;
-          }
+          final SyncResult syncRootRes = await _fetchPersistRoots();
 
-          while (true) {
-            logger.d('Fetching batch $batchNumber (page=$page, size=${AppConfig.batchSize})');
-            final apiBatch = await _fetchRootsFromApi(page, AppConfig.batchSize);
+          final SyncResult syncVerbsRes = await _fetchPersistVerbs();
 
-            if (apiBatch.isEmpty) {
-              logger.i('Backend returned empty batch, stopping fetch loop');
-              break;
-            }
-
-            logger.i('Batch $batchNumber: received ${apiBatch.length} items from backend');
-
-            // Upsert this batch immediately and collect results
-            final SyncResult result = await _rootRepository.upsertRoots(apiBatch);
-            totalInserted += result.inserted;
-            totalUpdated += result.updated;
-            totalSkipped += result.skipped;
-
-            // Move to next page
-            page++;
-            batchNumber++;
-
-            // If we received less than batch size, we've reached the end
-            if (apiBatch.length < AppConfig.batchSize) {
-              logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
-              break;
-            }
-          }
-
-          page = 0;
-
-          while (true) {
-            logger.d('Fetching batch $batchNumber (page=$page, size=${AppConfig.batchSize})');
-            final List<VerbSyncDto> apiBatch = await _fetchVerbsFromApi(page, AppConfig.batchSize);
-
-            if (apiBatch.isEmpty) {
-              logger.i('Backend returned empty batch, stopping fetch loop');
-              break;
-            }
-
-            logger.i('Batch $batchNumber: received ${apiBatch.length} items from backend');
-
-            final SyncResult result = await _verbRepository.upsertVerbs(apiBatch);
-
-            Map<int, List<VerbTranslationDto>> translationsWithParentIds = {
-              for (var dto in apiBatch) dto.id: dto.translations,
-            };
-
-            final SyncResult t9nRes = await _verbTranslationRepository.upsertForBatch(translationsWithParentIds);
-
-            totalInserted += result.inserted;
-            totalInserted += t9nRes.inserted;
-            totalUpdated += result.updated;
-            totalUpdated += t9nRes.updated;
-            totalSkipped += result.skipped;
-            totalSkipped += t9nRes.skipped;
-
-            // Move to next page
-            page++;
-            batchNumber++;
-
-            // If we received less than batch size, we've reached the end
-            if (apiBatch.length < AppConfig.batchSize) {
-              logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
-              break;
-            }
-          }
-
-          final syncResult = SyncResult(inserted: totalInserted, updated: totalUpdated, skipped: totalSkipped);
-          logger.i('Successfully completed sync: $syncResult');
-          return syncResult;
+          final SyncResult grandTotal = SyncResult.empty()
+              .addResult(syncBinyansRes)
+              .addResult(syncPrepsRes)
+              .addResult(syncGizrahsRes)
+              .addResult(syncRootRes)
+              .addResult(syncVerbsRes);
+          
+          logger.i('Successfully completed sync: $grandTotal');
+          return grandTotal;
         } catch (e, stackTrace) {
           logger.e('Error in fetchAndUpsertFromApi', error: e, stackTrace: stackTrace);
           rethrow;
@@ -206,6 +113,141 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     } catch (e, stackTrace) {
       logger.e('fetchAndInsertFromApi: error', error: e, stackTrace: stackTrace);
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
+  }
+  
+  Future<SyncResult> _fetchPersistVerbs() async {
+    SyncResult syncVerbRes = SyncResult.empty();
+
+    int verbQueryPage = 0;
+    int verbBatchNum = 1;
+    while (true) {
+      logger.d('Fetching batch $verbBatchNum (rootQueryPage=$verbQueryPage, size=${AppConfig.batchSize})');
+      final List<VerbSyncDto> apiBatch = await _fetchVerbsFromApi(verbQueryPage, AppConfig.batchSize);
+
+      if (apiBatch.isEmpty) {
+        logger.i('Backend returned empty batch, stopping fetch loop');
+        break;
+      }
+
+      logger.i('Batch $verbBatchNum: received ${apiBatch.length} items from backend');
+
+      final SyncResult verbRes = await _persistVerbs(apiBatch, verbBatchNum);
+      final SyncResult t9nRes = await _persistVerbTranslations(apiBatch, verbBatchNum);
+
+      syncVerbRes = syncVerbRes
+          .addResult(verbRes)
+          .addResult(t9nRes);
+      
+      verbQueryPage++;
+      verbBatchNum++;
+
+      // If we received less than batch size, we've reached the end
+      if (apiBatch.length < AppConfig.batchSize) {
+        logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
+        break;
+      }
+
+    }
+    return syncVerbRes;
+  }
+
+  Future<SyncResult> _persistVerbTranslations(List<VerbSyncDto> apiBatch, int verbBatchNum) async {
+    final Map<int, List<VerbTranslationDto>> translationsWithParentIds = {
+      for (final dto in apiBatch) dto.id: dto.translations,
+    };
+
+    logger.i("Upserting translations for ${translationsWithParentIds.length} verbs");
+    final SyncResult res = await _verbTranslationRepository.upsertForBatch(translationsWithParentIds);
+    logger.i("Upserting translations for verbs finished: inserted=${res.inserted}, updated=${res.updated}, "
+        "skipped=${res.skipped}");
+    return res;
+  }
+
+  Future<SyncResult> _persistVerbs(List<VerbSyncDto> apiBatch, int batchNumber) async {
+    if (apiBatch.isEmpty) {
+      logger.i('Backend returned empty batch, stopping fetch loop');
+      return SyncResult.empty();
+    }
+
+    final res = await _verbRepository.upsertVerbs(apiBatch);
+    logger.i(
+      'Upserting verbs finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+    );
+    return res;
+  }
+
+  Future<SyncResult> _fetchPersistRoots() async {
+    SyncResult syncRootRes = SyncResult.empty();
+
+    int rootQueryPage = 0;
+    int rootBatchNum = 1;
+    while (true) {
+      logger.d('Fetching batch $rootBatchNum (rootQueryPage=$rootQueryPage, size=${AppConfig.batchSize})');
+      final List<RootDto> apiBatch = await _fetchRootsFromApi(rootQueryPage, AppConfig.batchSize);
+      final SyncResult result = await _persistRoots(apiBatch, rootBatchNum);
+      syncRootRes = syncRootRes.addResult(result);
+
+      rootQueryPage++;
+      rootBatchNum++;
+
+      if (apiBatch.length < AppConfig.batchSize) {
+        logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
+        break;
+      }
+    }
+    return syncRootRes;
+  }
+  
+  Future<SyncResult> _persistRoots(List<RootDto> apiBatch, int batchNumber) async {
+    if (apiBatch.isEmpty) {
+      logger.i('Backend returned empty batch, stopping fetch loop');
+      return SyncResult.empty();
+    }
+
+    final res = await _rootRepository.upsertRoots(apiBatch);
+    logger.i(
+      'Upserting roots finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+    );
+    return res;
+  }
+
+  Future<SyncResult> _persistGizrahs(List<GizrahDto> allGizrahs) async {
+    if (allGizrahs.isEmpty) {
+      logger.i("Backend returned empty gizrah list");
+      return SyncResult.empty();
+    } else {
+      final res = await _gizrahRepository.upsertGizrah(allGizrahs);
+      logger.i(
+        'Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+      );
+      return res;
+    }
+  }
+
+  Future<SyncResult> _persistPrepositions(List<PrepositionDto> allPrepositions) async {
+    if (allPrepositions.isEmpty) {
+      logger.i("Backend returned empty preposition list");
+      return SyncResult.empty();
+    } else {
+      final res = await _prepositionRepository.upsertPrepositions(allPrepositions);
+      logger.i(
+        'Upserting prepositions finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+      );
+      return res;
+    }
+  }
+
+  Future<SyncResult> _persistBinyans(List<BinyanDto> allBinyans) async {
+    if (allBinyans.isEmpty) {
+      logger.i("Backend returned empty binyan list");
+      return SyncResult.empty();
+    } else {
+      final res = await _binyanRepository.upsertBinyans(allBinyans);
+      logger.i(
+        'Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+      );
+      return res;
     }
   }
 
