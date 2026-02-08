@@ -13,6 +13,7 @@ import 'package:almi3/model/repository/prep_repo.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';
 import 'package:almi3/model/repository/verb_t9n_repository.dart';
+import 'package:almi3/model/repository/verb_prep_repository.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:almi3/viewmodel/state/sync_page_state.dart';
 import 'package:dio/dio.dart';
@@ -43,6 +44,10 @@ final Provider<VerbTranslationRepository> verbTranslationRepositoryProvider = Pr
   (ref) => VerbTranslationRepository(ref.watch(appDatabaseProvider)),
 );
 
+final Provider<VerbPrepRepository> verbPrepRepositoryProvider = Provider(
+  (ref) => VerbPrepRepository(ref.watch(appDatabaseProvider)),
+);
+
 final NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState> rootViewmodelProvider =
     NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState>(SyncViewmodelNotifier.new);
 
@@ -53,6 +58,7 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
   late final GizrahRepository _gizrahRepository;
   late final VerbRepository _verbRepository;
   late final VerbTranslationRepository _verbTranslationRepository;
+  late final VerbPrepRepository _verbPrepRepository;
   final Dio _dio = Dio();
 
   @override
@@ -63,11 +69,14 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     _gizrahRepository = ref.watch(gizrahRepositoryProvider);
     _verbRepository = ref.watch(verbRepositoryProvider);
     _verbTranslationRepository = ref.watch(verbTranslationRepositoryProvider);
+    _verbPrepRepository = ref.watch(verbPrepRepositoryProvider);
 
     return const SyncViewmodelState();
   }
 
   Future<void> fetchAndInsertFromApi() async {
+    final stopwatch = Stopwatch()
+      ..start();
     try {
       logger.i('fetchAndInsertFromApi: starting');
       state = state.copyWith(isLoading: true, errorMessage: null);
@@ -88,13 +97,16 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
 
           final SyncResult syncVerbsRes = await _fetchPersistVerbs();
 
+          final SyncResult syncPrepositionLinks = await _fetchPersistPrepLinks();
+
           final SyncResult grandTotal = SyncResult.empty()
               .addResult(syncBinyansRes)
               .addResult(syncPrepsRes)
               .addResult(syncGizrahsRes)
               .addResult(syncRootRes)
-              .addResult(syncVerbsRes);
-          
+              .addResult(syncVerbsRes)
+              .addResult(syncPrepositionLinks);
+
           logger.i('Successfully completed sync: $grandTotal');
           return grandTotal;
         } catch (e, stackTrace) {
@@ -113,6 +125,9 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     } catch (e, stackTrace) {
       logger.e('fetchAndInsertFromApi: error', error: e, stackTrace: stackTrace);
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    } finally {
+      stopwatch.stop();
+      logger.i('fetchAndInsertFromApi: took ${stopwatch.elapsedMilliseconds}ms');
     }
   }
   
@@ -199,6 +214,35 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     return syncRootRes;
   }
   
+  Future<SyncResult> _fetchPersistPrepLinks() async {
+    SyncResult res = SyncResult.empty();
+    int page = 0;
+    int batch = 1;
+    bool droppedLinks = false;
+    
+    while (true) {
+      logger.d('Fetching batch #$batch of verb-preposition links (page=$page, size=${AppConfig.batchSize})');
+      final List<VerbPrepositionLinkDto> apiBatch = await _fetchPrepLinksFromApi(page, AppConfig.batchSize);
+
+      if(!droppedLinks) {
+        _verbPrepRepository.dropAllLinks();
+        logger.i("Dropped all verb/preposition links");
+      }
+      
+      final SyncResult batchResult = await _persistPrepLinks(apiBatch, batch);
+      res = res.addResult(batchResult);
+
+      page++;
+      batch++;
+
+      if (apiBatch.length < AppConfig.batchSize) {
+        logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
+        break;
+      }
+    }
+    return res;
+  }
+
   Future<SyncResult> _persistRoots(List<RootDto> apiBatch, int batchNumber) async {
     if (apiBatch.isEmpty) {
       logger.i('Backend returned empty batch, stopping fetch loop');
@@ -236,6 +280,20 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       );
       return res;
     }
+  }
+
+  Future<SyncResult> _persistPrepLinks(List<VerbPrepositionLinkDto> apiBatch, int batch) async {
+    if (apiBatch.isEmpty) {
+      logger.i('Backend returned empty batch, stopping fetch loop');
+      return SyncResult.empty();
+    }
+
+    // final res = await _verbPrepRepository.upsertLinks(apiBatch);
+    final res = await _verbPrepRepository.insertBatch(apiBatch);
+    logger.i(
+      'Upserting verb/prep links finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+    );
+    return res;
   }
 
   Future<SyncResult> _persistBinyans(List<BinyanDto> allBinyans) async {
@@ -337,6 +395,23 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       throw Exception('Failed to fetch verbs: status code ${response.statusCode}');
     } catch (e, stackTrace) {
       logger.e('Error fetching verbs from backend', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<List<VerbPrepositionLinkDto>> _fetchPrepLinksFromApi(int page, int batchSize) async {
+    try {
+      final url = '${AppConfig.backendUrl}${AppConfig.prepLinkEndpoint}?page=$page&size=$batchSize';
+      logger.d('Fetching all prepositions links from $url');
+      final response = await _dio.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = response.data as Map<String, dynamic>;
+        List<dynamic> values = data['content'] is List ? data['content'] as List<dynamic> : [];
+        return values.map((item) => VerbPrepositionLinkDto.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      throw Exception('Failed to fetch prepositions: status code ${response.statusCode}');
+    } catch (e, stackTrace) {
+      logger.e('Error fetching prepositions from backend', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

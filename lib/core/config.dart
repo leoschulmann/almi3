@@ -7,6 +7,7 @@ class AppConfig {
   static const String rootsEndpoint = '/api/root';
   static const String binyanEndpoint = '/api/binyan';
   static const String prepEndpoint = '/api/preposition';
+  static const String prepLinkEndpoint = '/api/preposition/links';
   static const String gizrahEndpoint = '/api/gizrah';
   static const String verbEndpoint = '/api/verb';
 

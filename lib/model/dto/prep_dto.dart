@@ -19,3 +19,18 @@ class PrepositionDto {
 
   Map<String, dynamic> toJson() => _$PrepositionDtoToJson(this);
 }
+
+@JsonSerializable()
+class VerbPrepositionLinkDto {
+  @JsonKey(name: "v")
+  final int verbId;
+
+  @JsonKey(name: "p")
+  final int prepositionId;
+
+  VerbPrepositionLinkDto({required this.verbId, required this.prepositionId});
+
+  factory VerbPrepositionLinkDto.fromJson(Map<String, dynamic> json) => _$VerbPrepositionLinkDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VerbPrepositionLinkDtoToJson(this);
+}
