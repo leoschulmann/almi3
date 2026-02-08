@@ -11,9 +11,10 @@ import 'package:almi3/model/repository/binyan_repository.dart';
 import 'package:almi3/model/repository/gizrah_repo.dart';
 import 'package:almi3/model/repository/prep_repo.dart';
 import 'package:almi3/model/repository/root_repository.dart';
+import 'package:almi3/model/repository/verb_gizrah_repository.dart';
+import 'package:almi3/model/repository/verb_prep_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';
 import 'package:almi3/model/repository/verb_t9n_repository.dart';
-import 'package:almi3/model/repository/verb_prep_repository.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:almi3/viewmodel/state/sync_page_state.dart';
 import 'package:dio/dio.dart';
@@ -38,7 +39,8 @@ final Provider<GizrahRepository> gizrahRepositoryProvider = Provider(
 );
 
 final Provider<VerbRepository> verbRepositoryProvider = Provider(
-        (ref) => VerbRepository(ref.watch(appDatabaseProvider)));
+  (ref) => VerbRepository(ref.watch(appDatabaseProvider)),
+);
 
 final Provider<VerbTranslationRepository> verbTranslationRepositoryProvider = Provider(
   (ref) => VerbTranslationRepository(ref.watch(appDatabaseProvider)),
@@ -46,6 +48,10 @@ final Provider<VerbTranslationRepository> verbTranslationRepositoryProvider = Pr
 
 final Provider<VerbPrepRepository> verbPrepRepositoryProvider = Provider(
   (ref) => VerbPrepRepository(ref.watch(appDatabaseProvider)),
+);
+
+final Provider<VerbGizrahRepository> verbGizrahRepositoryProvider = Provider(
+  (ref) => VerbGizrahRepository(ref.watch(appDatabaseProvider)),
 );
 
 final NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState> rootViewmodelProvider =
@@ -59,6 +65,7 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
   late final VerbRepository _verbRepository;
   late final VerbTranslationRepository _verbTranslationRepository;
   late final VerbPrepRepository _verbPrepRepository;
+  late final VerbGizrahRepository _verbGizrahRepository;
   final Dio _dio = Dio();
 
   @override
@@ -70,13 +77,13 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     _verbRepository = ref.watch(verbRepositoryProvider);
     _verbTranslationRepository = ref.watch(verbTranslationRepositoryProvider);
     _verbPrepRepository = ref.watch(verbPrepRepositoryProvider);
+    _verbGizrahRepository = ref.watch(verbGizrahRepositoryProvider);
 
     return const SyncViewmodelState();
   }
 
   Future<void> fetchAndInsertFromApi() async {
-    final stopwatch = Stopwatch()
-      ..start();
+    final stopwatch = Stopwatch()..start();
     try {
       logger.i('fetchAndInsertFromApi: starting');
       state = state.copyWith(isLoading: true, errorMessage: null);
@@ -99,13 +106,16 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
 
           final SyncResult syncPrepositionLinks = await _fetchPersistPrepLinks();
 
+          final SyncResult syncGizrahLinks = await _fetchPersistGizrahLinks();
+
           final SyncResult grandTotal = SyncResult.empty()
               .addResult(syncBinyansRes)
               .addResult(syncPrepsRes)
               .addResult(syncGizrahsRes)
               .addResult(syncRootRes)
               .addResult(syncVerbsRes)
-              .addResult(syncPrepositionLinks);
+              .addResult(syncPrepositionLinks)
+              .addResult(syncGizrahLinks);
 
           logger.i('Successfully completed sync: $grandTotal');
           return grandTotal;
@@ -130,7 +140,7 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       logger.i('fetchAndInsertFromApi: took ${stopwatch.elapsedMilliseconds}ms');
     }
   }
-  
+
   Future<SyncResult> _fetchPersistVerbs() async {
     SyncResult syncVerbRes = SyncResult.empty();
 
@@ -150,10 +160,8 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       final SyncResult verbRes = await _persistVerbs(apiBatch, verbBatchNum);
       final SyncResult t9nRes = await _persistVerbTranslations(apiBatch, verbBatchNum);
 
-      syncVerbRes = syncVerbRes
-          .addResult(verbRes)
-          .addResult(t9nRes);
-      
+      syncVerbRes = syncVerbRes.addResult(verbRes).addResult(t9nRes);
+
       verbQueryPage++;
       verbBatchNum++;
 
@@ -162,7 +170,6 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
         logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
         break;
       }
-
     }
     return syncVerbRes;
   }
@@ -174,8 +181,10 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
 
     logger.i("Upserting translations for ${translationsWithParentIds.length} verbs");
     final SyncResult res = await _verbTranslationRepository.upsertForBatch(translationsWithParentIds);
-    logger.i("Upserting translations for verbs finished: inserted=${res.inserted}, updated=${res.updated}, "
-        "skipped=${res.skipped}");
+    logger.i(
+      "Upserting translations for verbs finished: inserted=${res.inserted}, updated=${res.updated}, "
+      "skipped=${res.skipped}",
+    );
     return res;
   }
 
@@ -186,9 +195,7 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     }
 
     final res = await _verbRepository.upsertVerbs(apiBatch);
-    logger.i(
-      'Upserting verbs finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-    );
+    logger.i('Upserting verbs finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}');
     return res;
   }
 
@@ -213,23 +220,52 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     }
     return syncRootRes;
   }
-  
+
   Future<SyncResult> _fetchPersistPrepLinks() async {
     SyncResult res = SyncResult.empty();
     int page = 0;
     int batch = 1;
     bool droppedLinks = false;
-    
+
     while (true) {
       logger.d('Fetching batch #$batch of verb-preposition links (page=$page, size=${AppConfig.batchSize})');
       final List<VerbPrepositionLinkDto> apiBatch = await _fetchPrepLinksFromApi(page, AppConfig.batchSize);
 
-      if(!droppedLinks) {
-        _verbPrepRepository.dropAllLinks();
+      if (!droppedLinks) {
+        await _verbPrepRepository.dropAllLinks();
         logger.i("Dropped all verb/preposition links");
       }
-      
+
       final SyncResult batchResult = await _persistPrepLinks(apiBatch, batch);
+      res = res.addResult(batchResult);
+
+      page++;
+      batch++;
+
+      if (apiBatch.length < AppConfig.batchSize) {
+        logger.i('Received incomplete batch (${apiBatch.length} < ${AppConfig.batchSize}), stopping fetch loop');
+        break;
+      }
+    }
+    return res;
+  }
+
+  Future<SyncResult> _fetchPersistGizrahLinks() async {
+    SyncResult res = SyncResult.empty();
+    int page = 0;
+    int batch = 1;
+    bool droppedLinks = false;
+
+    while (true) {
+      logger.d('Fetching batch #$batch of verb-gizrah links (page=$page, size=${AppConfig.batchSize})');
+      final List<VerbGizrahLinkDto> apiBatch = await _fetchGizrahLinksFromApi(page, AppConfig.batchSize);
+
+      if (!droppedLinks) {
+        await _verbGizrahRepository.dropAllLinks();
+        logger.i("Dropped all verb/gizrah links");
+      }
+
+      final SyncResult batchResult = await _persistGizrahLinks(apiBatch, batch);
       res = res.addResult(batchResult);
 
       page++;
@@ -250,9 +286,7 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
     }
 
     final res = await _rootRepository.upsertRoots(apiBatch);
-    logger.i(
-      'Upserting roots finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-    );
+    logger.i('Upserting roots finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}');
     return res;
   }
 
@@ -262,11 +296,21 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       return SyncResult.empty();
     } else {
       final res = await _gizrahRepository.upsertGizrah(allGizrahs);
-      logger.i(
-        'Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-      );
+      logger.i('Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}');
       return res;
     }
+  }
+
+  Future<SyncResult> _persistGizrahLinks(List<VerbGizrahLinkDto> apiBatch, int batch) async {
+    if (apiBatch.isEmpty) {
+      logger.i('Backend returned empty batch, stopping fetch loop');
+      return SyncResult.empty();
+    }
+    final res = await _verbGizrahRepository.insertBatch(apiBatch);
+    logger.i(
+      'Upserting verb/gizrah links finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
+    );
+    return res;
   }
 
   Future<SyncResult> _persistPrepositions(List<PrepositionDto> allPrepositions) async {
@@ -302,9 +346,7 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       return SyncResult.empty();
     } else {
       final res = await _binyanRepository.upsertBinyans(allBinyans);
-      logger.i(
-        'Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}',
-      );
+      logger.i('Upserting binyans finished inserted=${res.inserted}, updated=${res.updated}, skipped=${res.skipped}');
       return res;
     }
   }
@@ -412,6 +454,23 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
       throw Exception('Failed to fetch prepositions: status code ${response.statusCode}');
     } catch (e, stackTrace) {
       logger.e('Error fetching prepositions from backend', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<List<VerbGizrahLinkDto>> _fetchGizrahLinksFromApi(int page, int batchSize) async {
+    try {
+      final url = '${AppConfig.backendUrl}${AppConfig.gizrahLinkEndpoint}?page=$page&size=$batchSize';
+      logger.d('Fetching all gizrah links from $url');
+      final response = await _dio.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = response.data as Map<String, dynamic>;
+        List<dynamic> values = data['content'] is List ? data['content'] as List<dynamic> : [];
+        return values.map((item) => VerbGizrahLinkDto.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      throw Exception('Failed to fetch gizrah: status code ${response.statusCode}');
+    } catch (e, stackTrace) {
+      logger.e('Error fetching gizrah from backend', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

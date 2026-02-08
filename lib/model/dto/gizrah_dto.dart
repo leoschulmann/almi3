@@ -19,3 +19,18 @@ class GizrahDto {
 
   Map<String, dynamic> toJson() => _$GizrahDtoToJson(this);
 }
+
+@JsonSerializable()
+class VerbGizrahLinkDto {
+  @JsonKey(name: "v")
+  final int verbId;
+
+  @JsonKey(name: "g")
+  final int gizrahId;
+
+  VerbGizrahLinkDto({required this.verbId, required this.gizrahId});
+
+  factory VerbGizrahLinkDto.fromJson(Map<String, dynamic> json) => _$VerbGizrahLinkDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VerbGizrahLinkDtoToJson(this);
+}

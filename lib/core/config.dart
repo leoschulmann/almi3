@@ -9,6 +9,7 @@ class AppConfig {
   static const String prepEndpoint = '/api/preposition';
   static const String prepLinkEndpoint = '/api/preposition/links';
   static const String gizrahEndpoint = '/api/gizrah';
+  static const String gizrahLinkEndpoint = '/api/gizrah/links';
   static const String verbEndpoint = '/api/verb';
 
   /// Batch size for fetching and processing roots from backend
