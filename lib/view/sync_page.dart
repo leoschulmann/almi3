@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../viewmodel/simple_sync_viewmodel.dart';
 import '../viewmodel/state/sync_page_state.dart';
-import '../viewmodel/sync_viewmodel.dart';
 
 class SyncPage extends ConsumerWidget {
   const SyncPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final SyncViewmodelState state = ref.watch(rootViewmodelProvider);
-    final SyncViewmodelNotifier notifier = ref.read(rootViewmodelProvider.notifier);
+    final SyncViewmodelState state = ref.watch(simpleSyncViewmodelProvider);
+    final SimpleSyncViewmodelNotifier notifier = ref.read(simpleSyncViewmodelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.inversePrimary, title: const Text('Sync')),

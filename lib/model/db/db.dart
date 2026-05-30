@@ -1,6 +1,11 @@
 import 'dart:io';
 
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/model/db/tables/verb_form_example_t9n_table.dart';
+import 'package:almi3/model/db/tables/verb_form_example_table.dart';
+import 'package:almi3/model/db/tables/verb_form_t13n_table.dart';
+import 'package:almi3/model/db/tables/verb_form_table.dart';
+import 'package:flutter/foundation.dart';
 import 'package:almi3/model/db/tables/binyan_table.dart';
 import 'package:almi3/model/db/tables/gizrah_table.dart';
 import 'package:almi3/model/db/tables/prep_table.dart';
@@ -19,8 +24,11 @@ import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 part 'db.g.dart';
 
 @DriftDatabase(
-  tables: [RootTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
-  VerbTranslationTable],
+  tables: [
+    RootTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
+    VerbTranslationTable, VerbFormTable, VerbFormTransliterationTable,
+    VerbFormExampleTable, VerbFormExampleTranslationTable,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());

@@ -12,4 +12,7 @@ class VerbGizrahTable extends Table {
 
   @override
   Set<Column> get primaryKey => {verbId, gizrahId};
+
+  @override
+  String get tableName => 'verb_gizrah_jointable';
 }

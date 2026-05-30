@@ -12,4 +12,7 @@ class VerbPrepTable extends Table {
 
   @override
   Set<Column> get primaryKey => {verbId, prepId};
+
+  @override
+  String get tableName => 'verb_prep_jointable';
 }

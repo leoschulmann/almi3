@@ -15,4 +15,7 @@ class VerbTranslationTable extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  String get tableName => 'verb_t9n_table';
 }

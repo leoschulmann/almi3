@@ -54,9 +54,11 @@ final Provider<VerbGizrahRepository> verbGizrahRepositoryProvider = Provider(
   (ref) => VerbGizrahRepository(ref.watch(appDatabaseProvider)),
 );
 
+@Deprecated('Use simpleSyncViewmodelProvider from simple_sync_viewmodel.dart')
 final NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState> rootViewmodelProvider =
     NotifierProvider<SyncViewmodelNotifier, SyncViewmodelState>(SyncViewmodelNotifier.new);
 
+@Deprecated('Use SimpleSyncViewmodelNotifier from simple_sync_viewmodel.dart')
 class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
   late final RootRepository _rootRepository;
   late final BinyanRepository _binyanRepository;
@@ -66,7 +68,14 @@ class SyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
   late final VerbTranslationRepository _verbTranslationRepository;
   late final VerbPrepRepository _verbPrepRepository;
   late final VerbGizrahRepository _verbGizrahRepository;
-  final Dio _dio = Dio();
+  final Dio _dio = Dio()..interceptors.add(LogInterceptor(
+    requestHeader: false,
+    requestBody: false,
+    responseHeader: false,
+    responseBody: true,
+    error: true,
+    logPrint: (o) => logger.d('Dio: $o'),
+  ));
 
   @override
   SyncViewmodelState build() {
