@@ -11,6 +11,7 @@ class RootCard extends StatefulWidget {
   final int nounCount;
   final bool isBookmarked;
   final VoidCallback? onTap;
+  final VoidCallback? onBookmarkToggle;
 
   const RootCard({
     super.key,
@@ -20,6 +21,7 @@ class RootCard extends StatefulWidget {
     this.nounCount = 0,
     this.isBookmarked = false,
     this.onTap,
+    this.onBookmarkToggle,
   });
 
   @override
@@ -27,7 +29,6 @@ class RootCard extends StatefulWidget {
 }
 
 class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin {
-  late bool _isBookmarked;
   late final AnimationController _pulseController;
   late final Animation<double> _scale;
 
@@ -36,7 +37,6 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _isBookmarked = widget.isBookmarked;
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -60,7 +60,7 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
       onLongPress: () {
         HapticFeedback.mediumImpact();
         _pulseController.forward(from: 0);
-        setState(() => _isBookmarked = !_isBookmarked);
+        widget.onBookmarkToggle?.call();
       },
       child: ScaleTransition(
         scale: _scale,
@@ -124,7 +124,7 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOut,
-                  top: _isBookmarked ? 0 : -_bookmarkHeight,
+                  top: widget.isBookmarked ? 0 : -_bookmarkHeight,
                   right: 25,
                   child: const BookmarkRibbon(),
                 ),

@@ -94,7 +94,9 @@ class ReferencePage extends ConsumerWidget {
                     adjCount: rng.nextInt(20),
                     verbCount: rng.nextInt(20),
                     nounCount: rng.nextInt(20),
-                    isBookmarked: rng.nextBool(),
+                    isBookmarked: state.isBookmarked(root.id),
+                    onBookmarkToggle: () =>
+                        ref.read(referencePageProvider.notifier).toggleBookmark(root.id),
                   );
                 },
               ),

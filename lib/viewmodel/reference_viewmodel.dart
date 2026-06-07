@@ -1,20 +1,26 @@
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/model/repository/root_bookmark_repository.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/viewmodel/state/reference_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final NotifierProvider<ReferencePageNotifier, ReferencePageState> referencePageProvider =
+final referencePageProvider =
     NotifierProvider<ReferencePageNotifier, ReferencePageState>(ReferencePageNotifier.new);
 
+final rootBookmarkRepositoryProvider =
+    Provider((ref) => RootBookmarkRepository(ref.watch(appDatabaseProvider)));
+
 class ReferencePageNotifier extends Notifier<ReferencePageState> {
-  late final RootRepository _repository;
+  late final RootRepository _rootRepo;
+  late final RootBookmarkRepository _bookmarkRepo;
   int _page = 0;
   static const int _size = 20;
 
   @override
   ReferencePageState build() {
-    _repository = ref.watch(rootRepositoryProvider);
+    _rootRepo = ref.watch(rootRepositoryProvider);
+    _bookmarkRepo = ref.watch(rootBookmarkRepositoryProvider);
     Future.microtask(() => _loadInit());
     return const ReferencePageState();
   }
@@ -22,39 +28,68 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
   Future<void> _loadInit() async {
     try {
       state = state.copyWith(isLoading: true, errMsg: null);
-      logger.d('calling getRootsPaged with page=$_page, size=$_size');
-      final rootsPaged = await _repository.getRootsPaged(_page, _size);
-      logger.i('received ${rootsPaged.length} items');
-      state = state.copyWith(roots: rootsPaged, isLoading: false, hasMore: rootsPaged.length == _size);
-      logger.d('state updated: ${state.roots.length} roots, hasMore=${state.hasMore}');
-    } catch (e, stackTrace) {
-      logger.e('_loadInit() error', error: e, stackTrace: stackTrace);
+      final results = await Future.wait([
+        _rootRepo.getRootsPaged(_page, _size),
+        _bookmarkRepo.getBookmarkedRootIds(),
+      ]);
+      final roots = results[0] as dynamic;
+      final bookmarks = results[1] as Set<int>;
+      state = state.copyWith(
+        roots: roots,
+        bookmarkedRootIds: bookmarks,
+        isLoading: false,
+        hasMore: roots.length == _size,
+      );
+    } catch (e, st) {
+      logger.e('_loadInit() error', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false, errMsg: e.toString());
     }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || !state.hasMore) {
-      logger.d('loadMore: skipped (isLoading=${state.isLoading}, hasMore=${state.hasMore})');
-      return;
-    }
+    if (state.isLoading || !state.hasMore) return;
     state = state.copyWith(isLoading: true);
     _page++;
-    logger.d('loadMore: loading page=$_page');
     try {
-      final roots = await _repository.getRootsPaged(_page, _size);
-      logger.i('loadMore: loaded ${roots.length} more items');
-      state = state.copyWith(roots: [...state.roots, ...roots], isLoading: false, hasMore: roots.length == _size);
-    } catch (e, stackTrace) {
+      final roots = await _rootRepo.getRootsPaged(_page, _size);
+      state = state.copyWith(
+        roots: [...state.roots, ...roots],
+        isLoading: false,
+        hasMore: roots.length == _size,
+      );
+    } catch (e, st) {
       _page--;
-      logger.e('loadMore: error', error: e, stackTrace: stackTrace);
+      logger.e('loadMore: error', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false, errMsg: e.toString());
     }
   }
 
   Future<void> refresh() async {
-    logger.d('refresh: resetting to page 0');
     _page = 0;
     await _loadInit();
   }
+
+  Future<void> toggleBookmark(int rootId) async {
+    final updated = Set<int>.from(state.bookmarkedRootIds);
+    final willBeBookmarked = !updated.contains(rootId);
+    if (willBeBookmarked) {
+      updated.add(rootId);
+    } else {
+      updated.remove(rootId);
+    }
+    state = state.copyWith(bookmarkedRootIds: updated);
+
+    // Persist in background
+    try {
+      await _bookmarkRepo.toggleBookmark(rootId);
+    } catch (e, st) {
+      logger.e('toggleBookmark: error', error: e, stackTrace: st);
+      // Roll back on failure
+      state = state.copyWith(bookmarkedRootIds: Set<int>.from(state.bookmarkedRootIds)..toggle(rootId, willBeBookmarked));
+    }
+  }
+}
+
+extension on Set<int> {
+  void toggle(int value, bool add) => add ? this.add(value) : remove(value);
 }
