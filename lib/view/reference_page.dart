@@ -1,8 +1,7 @@
-import 'dart:math';
-
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/root_card.dart';
+import 'package:almi3/view/word_page.dart';
 import 'package:almi3/viewmodel/reference_viewmodel.dart';
 import 'package:almi3/viewmodel/state/reference_page_state.dart';
 import 'package:flutter/material.dart';
@@ -88,13 +87,15 @@ class ReferencePage extends ConsumerWidget {
                     );
                   }
                   final root = state.roots[index];
-                  final rng = Random();
                   return RootCard(
                     hebrewText: root.value,
-                    adjCount: rng.nextInt(20),
-                    verbCount: rng.nextInt(20),
-                    nounCount: rng.nextInt(20),
+                    adjCount: 0,
+                    verbCount: 0,
+                    nounCount: 0,
                     isBookmarked: state.isBookmarked(root.id),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => WordPage(root: root)),
+                    ),
                     onBookmarkToggle: () =>
                         ref.read(referencePageProvider.notifier).toggleBookmark(root.id),
                   );

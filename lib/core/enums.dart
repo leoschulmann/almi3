@@ -1,3 +1,6 @@
+import 'package:almi3/core/app_colors.dart';
+import 'package:flutter/material.dart';
+
 enum GrammaticalPerson { none, first, second, third }
 
 enum GrammaticalGender { none, masculine, feminine }
@@ -5,6 +8,36 @@ enum GrammaticalGender { none, masculine, feminine }
 enum Plurality { singular, plural, none }
 
 enum Tense { present, past, future, imperative, infinitive }
+
+enum BookmarkType { root, verb, noun, adjective }
+
+enum WordType {
+  verb(
+    gradientStart: AppColors.verbMain,
+    gradientEnd: AppColors.verbGradient,
+    textColor: AppColors.verbComplement,
+  ),
+  noun(
+    gradientStart: AppColors.nounMain,
+    gradientEnd: AppColors.nounGradient,
+    textColor: AppColors.nounComplement,
+  ),
+  adjective(
+    gradientStart: AppColors.adjectiveMain,
+    gradientEnd: AppColors.adjectiveGradient,
+    textColor: AppColors.adjectiveComplement,
+  );
+
+  const WordType({
+    required this.gradientStart,
+    required this.gradientEnd,
+    required this.textColor,
+  });
+
+  final Color gradientStart;
+  final Color gradientEnd;
+  final Color textColor;
+}
 
 Tense tenseFromJson(int i) => Tense.values[i];
 

@@ -22,6 +22,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final Provider<AppDatabase> appDatabaseProvider = Provider((ref) => AppDatabase());
 
+final syncCounterProvider = NotifierProvider<_SyncCounter, int>(_SyncCounter.new);
+
+class _SyncCounter extends Notifier<int> {
+  @override
+  int build() => 0;
+  void increment() => state++;
+}
+
 final Provider<RootRepository> rootRepositoryProvider = Provider(
   (ref) => RootRepository(ref.watch(appDatabaseProvider)),
 );

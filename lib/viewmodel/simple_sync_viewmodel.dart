@@ -1,6 +1,5 @@
 import 'package:almi3/core/config.dart';
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/db/db.dart';
 import 'package:almi3/model/dto/binyan_dto.dart';
 import 'package:almi3/model/dto/gizrah_dto.dart';
 import 'package:almi3/model/dto/prep_dto.dart';
@@ -8,7 +7,6 @@ import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
 import 'package:almi3/model/dto/verb_form_example_simple_dto.dart';
 import 'package:almi3/model/dto/verb_form_simple_dto.dart';
-import 'package:almi3/model/dto/verb_t9n_dto.dart';
 import 'package:almi3/model/repository/binyan_repository.dart';
 import 'package:almi3/model/repository/gizrah_repo.dart';
 import 'package:almi3/model/repository/prep_repo.dart';
@@ -45,18 +43,18 @@ final Provider<VerbFormExampleT9nRepository> verbFormExampleT9nRepositoryProvide
     Provider((ref) => VerbFormExampleT9nRepository(ref.watch(appDatabaseProvider)));
 
 class SimpleSyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
-  late final RootRepository _rootRepo;
-  late final BinyanRepository _binyanRepo;
-  late final PrepositionRepository _prepRepo;
-  late final GizrahRepository _gizrahRepo;
-  late final VerbRepository _verbRepo;
-  late final VerbTranslationRepository _verbT9nRepo;
-  late final VerbPrepRepository _verbPrepRepo;
-  late final VerbGizrahRepository _verbGizrahRepo;
-  late final VerbFormRepository _verbFormRepo;
-  late final VerbFormT13nRepository _verbFormT13nRepo;
-  late final VerbFormExampleRepository _verbFormExampleRepo;
-  late final VerbFormExampleT9nRepository _verbFormExampleT9nRepo;
+  late RootRepository _rootRepo;
+  late BinyanRepository _binyanRepo;
+  late PrepositionRepository _prepRepo;
+  late GizrahRepository _gizrahRepo;
+  late VerbRepository _verbRepo;
+  late VerbTranslationRepository _verbT9nRepo;
+  late VerbPrepRepository _verbPrepRepo;
+  late VerbGizrahRepository _verbGizrahRepo;
+  late VerbFormRepository _verbFormRepo;
+  late VerbFormT13nRepository _verbFormT13nRepo;
+  late VerbFormExampleRepository _verbFormExampleRepo;
+  late VerbFormExampleT9nRepository _verbFormExampleT9nRepo;
 
   final Dio _dio = Dio()
     ..interceptors.add(LogInterceptor(
@@ -100,6 +98,7 @@ class SimpleSyncViewmodelNotifier extends Notifier<SyncViewmodelState> {
         updated: result.updated,
         skipped: result.skipped,
       );
+      ref.read(syncCounterProvider.notifier).increment();
     } catch (e, st) {
       logger.e('SimpleSyncViewmodel: sync failed', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

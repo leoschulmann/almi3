@@ -1,26 +1,29 @@
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/repository/root_bookmark_repository.dart';
+import 'package:almi3/model/repository/bookmark_repository.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/viewmodel/state/reference_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/enums.dart';
+
 final referencePageProvider =
     NotifierProvider<ReferencePageNotifier, ReferencePageState>(ReferencePageNotifier.new);
 
-final rootBookmarkRepositoryProvider =
-    Provider((ref) => RootBookmarkRepository(ref.watch(appDatabaseProvider)));
+final bookmarkRepositoryProvider =
+    Provider((ref) => BookmarkRepository(ref.watch(appDatabaseProvider)));
 
 class ReferencePageNotifier extends Notifier<ReferencePageState> {
-  late final RootRepository _rootRepo;
-  late final RootBookmarkRepository _bookmarkRepo;
+  late RootRepository _rootRepo;
+  late BookmarkRepository _bookmarkRepo;
   int _page = 0;
   static const int _size = 20;
 
   @override
   ReferencePageState build() {
     _rootRepo = ref.watch(rootRepositoryProvider);
-    _bookmarkRepo = ref.watch(rootBookmarkRepositoryProvider);
+    _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
+    ref.watch(syncCounterProvider);
     Future.microtask(() => _loadInit());
     return const ReferencePageState();
   }
@@ -30,7 +33,7 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
       state = state.copyWith(isLoading: true, errMsg: null);
       final results = await Future.wait([
         _rootRepo.getRootsPaged(_page, _size),
-        _bookmarkRepo.getBookmarkedRootIds(),
+        _bookmarkRepo.getBookmarkedIds(BookmarkType.root),
       ]);
       final roots = results[0] as dynamic;
       final bookmarks = results[1] as Set<int>;
@@ -79,13 +82,13 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
     }
     state = state.copyWith(bookmarkedRootIds: updated);
 
-    // Persist in background
     try {
-      await _bookmarkRepo.toggleBookmark(rootId);
+      await _bookmarkRepo.toggleBookmark(rootId, BookmarkType.root);
     } catch (e, st) {
       logger.e('toggleBookmark: error', error: e, stackTrace: st);
-      // Roll back on failure
-      state = state.copyWith(bookmarkedRootIds: Set<int>.from(state.bookmarkedRootIds)..toggle(rootId, willBeBookmarked));
+      state = state.copyWith(
+        bookmarkedRootIds: Set<int>.from(state.bookmarkedRootIds)..toggle(rootId, willBeBookmarked),
+      );
     }
   }
 }

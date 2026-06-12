@@ -9,7 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:almi3/model/db/tables/binyan_table.dart';
 import 'package:almi3/model/db/tables/gizrah_table.dart';
 import 'package:almi3/model/db/tables/prep_table.dart';
-import 'package:almi3/model/db/tables/root_bookmark_table.dart';
+import 'package:almi3/core/enums.dart';
+import 'package:almi3/model/db/tables/bookmark_table.dart';
 import 'package:almi3/model/db/tables/root_table.dart';
 import 'package:almi3/model/db/tables/verb_gizrah_table.dart';
 import 'package:almi3/model/db/tables/verb_prep_table.dart';
@@ -26,7 +27,7 @@ part 'db.g.dart';
 
 @DriftDatabase(
   tables: [
-    RootTable, RootBookmarkTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
+    RootTable, BookmarkTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
     VerbTranslationTable, VerbFormTable, VerbFormTransliterationTable,
     VerbFormExampleTable, VerbFormExampleTranslationTable,
   ],

@@ -1,5 +1,6 @@
 import 'package:almi3/model/db/db.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
+import 'package:almi3/model/dto/verb_word_dto.dart';
 import 'package:almi3/model/repository/generic_repo.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
@@ -47,5 +48,23 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
 
   Future<SyncResult> upsertVerbs(List<VerbSyncDto> apiBatch) async {
     return upsertBatch(apiBatch);
+  }
+
+  Future<List<VerbWordDto>> getVerbsByRootId(int rootId, String lang) async {
+    final query = database.select(database.verbTable).join([
+      leftOuterJoin(
+        database.verbTranslationTable,
+        database.verbTranslationTable.verbId.equalsExp(database.verbTable.id) &
+            database.verbTranslationTable.lang.equals(lang),
+      ),
+    ])
+      ..where(database.verbTable.rootId.equals(rootId));
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final verb = row.readTable(database.verbTable);
+      final t9n = row.readTableOrNull(database.verbTranslationTable);
+      return VerbWordDto(id: verb.id, value: verb.value, translation: t9n?.value ?? '');
+    }).toList();
   }
 }
