@@ -50,6 +50,10 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     return upsertBatch(apiBatch);
   }
 
+  static const _superscriptDigits = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
+
+  String _superscript(int n) => n.toString().split('').map((d) => _superscriptDigits[int.parse(d)]).join();
+
   Future<List<VerbWordDto>> getVerbsByRootId(int rootId, String lang) async {
     final query = database.select(database.verbTable).join([
       leftOuterJoin(
@@ -61,10 +65,20 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
       ..where(database.verbTable.rootId.equals(rootId));
 
     final rows = await query.get();
-    return rows.map((row) {
+
+    final grouped = <int, ({VerbTableData verb, List<String> translations})>{};
+    for (final row in rows) {
       final verb = row.readTable(database.verbTable);
       final t9n = row.readTableOrNull(database.verbTranslationTable);
-      return VerbWordDto(id: verb.id, value: verb.value, translation: t9n?.value ?? '');
+      final entry = grouped.putIfAbsent(verb.id, () => (verb: verb, translations: []));
+      if (t9n != null) entry.translations.add(t9n.value);
+    }
+
+    return grouped.values.map((entry) {
+      final t = entry.translations;
+      final first = t.isEmpty ? '' : t[0];
+      final label = t.length <= 1 ? first : '$first⁺${_superscript(t.length - 1)}';
+      return VerbWordDto(id: entry.verb.id, value: entry.verb.value, translation: label);
     }).toList();
   }
 }
