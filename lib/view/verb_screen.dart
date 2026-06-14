@@ -124,7 +124,7 @@ class _MainSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          WordTitle(translation: verb.translation, hebrewValue: verb.value, wordType: WordType.verb),
+          WordTitle(translations: verb.translations, hebrewValue: verb.value, wordType: WordType.verb),
           const SizedBox(height: 16),
         ],
       ),

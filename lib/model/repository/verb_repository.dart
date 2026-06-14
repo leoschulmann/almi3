@@ -76,7 +76,10 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     final verb = row.readTable(database.verbTable);
     final binyan = row.readTable(database.binyanTable);
     final root = row.readTable(database.rootTable);
-    final t9n = row.readTableOrNull(database.verbTranslationTable);
+    final translations = rows
+        .map((r) => r.readTableOrNull(database.verbTranslationTable)?.value)
+        .whereType<String>()
+        .toList();
 
     final gizrahRows = await (database.select(database.gizrahTable).join([
       innerJoin(database.verbGizrahTable, database.verbGizrahTable.gizrahId.equalsExp(database.gizrahTable.id)),
@@ -108,7 +111,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
       root: root.value,
       gizrahs: gizrahRows.map((r) => r.readTable(database.gizrahTable).value).toList(),
       preps: prepRows.map((r) => r.readTable(database.prepositionTable).value).toList(),
-      translation: t9n?.value ?? '',
+      translations: translations,
       forms: formMap.values.map((e) => VerbFormDisplayDto(
         id: e.form.id,
         value: e.form.value,

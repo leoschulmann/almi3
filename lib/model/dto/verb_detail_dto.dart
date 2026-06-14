@@ -7,7 +7,7 @@ class VerbDetailDto {
   final String root;
   final List<String> gizrahs;
   final List<String> preps;
-  final String translation;
+  final List<String> translations;
   final List<VerbFormDisplayDto> forms;
 
   const VerbDetailDto({
@@ -17,7 +17,7 @@ class VerbDetailDto {
     required this.root,
     required this.gizrahs,
     required this.preps,
-    required this.translation,
+    required this.translations,
     required this.forms,
   });
 }
