@@ -1,4 +1,6 @@
+import 'package:almi3/core/enums.dart';
 import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
 import 'package:almi3/model/dto/verb_word_dto.dart';
 import 'package:almi3/model/repository/generic_repo.dart';
@@ -53,6 +55,71 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
   static const _superscriptDigits = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
 
   String _superscript(int n) => n.toString().split('').map((d) => _superscriptDigits[int.parse(d)]).join();
+
+  // todo seems heavy
+  Future<VerbDetailDto?> getVerbDetail(int verbId, String lang) async {
+    final query = database.select(database.verbTable).join([
+      innerJoin(database.binyanTable, database.binyanTable.id.equalsExp(database.verbTable.binyanId)),
+      innerJoin(database.rootTable, database.rootTable.id.equalsExp(database.verbTable.rootId)),
+      leftOuterJoin(
+        database.verbTranslationTable,
+        database.verbTranslationTable.verbId.equalsExp(database.verbTable.id) &
+            database.verbTranslationTable.lang.equals(lang),
+      ),
+    ])
+      ..where(database.verbTable.id.equals(verbId));
+
+    final rows = await query.get();
+    if (rows.isEmpty) return null;
+
+    final row = rows.first;
+    final verb = row.readTable(database.verbTable);
+    final binyan = row.readTable(database.binyanTable);
+    final root = row.readTable(database.rootTable);
+    final t9n = row.readTableOrNull(database.verbTranslationTable);
+
+    final gizrahRows = await (database.select(database.gizrahTable).join([
+      innerJoin(database.verbGizrahTable, database.verbGizrahTable.gizrahId.equalsExp(database.gizrahTable.id)),
+    ])..where(database.verbGizrahTable.verbId.equals(verbId))).get();
+
+    final prepRows = await (database.select(database.prepositionTable).join([
+      innerJoin(database.verbPrepTable, database.verbPrepTable.prepId.equalsExp(database.prepositionTable.id)),
+    ])..where(database.verbPrepTable.verbId.equals(verbId))).get();
+
+    final formRows = await (database.select(database.verbFormTable).join([
+      leftOuterJoin(
+        database.verbFormTransliterationTable,
+        database.verbFormTransliterationTable.verbFormId.equalsExp(database.verbFormTable.id) &
+            database.verbFormTransliterationTable.lang.equals(lang),
+      ),
+    ])..where(database.verbFormTable.verbId.equals(verbId))).get();
+
+    final formMap = <int, ({VerbFormTableData form, String? translit})>{};
+    for (final r in formRows) {
+      final f = r.readTable(database.verbFormTable);
+      final t = r.readTableOrNull(database.verbFormTransliterationTable);
+      formMap.putIfAbsent(f.id, () => (form: f, translit: t?.value));
+    }
+
+    return VerbDetailDto(
+      id: verb.id,
+      value: verb.value,
+      binyan: binyan.value,
+      root: root.value,
+      gizrahs: gizrahRows.map((r) => r.readTable(database.gizrahTable).value).toList(),
+      preps: prepRows.map((r) => r.readTable(database.prepositionTable).value).toList(),
+      translation: t9n?.value ?? '',
+      forms: formMap.values.map((e) => VerbFormDisplayDto(
+        id: e.form.id,
+        value: e.form.value,
+        translit: e.translit ?? '',
+        tense: Tense.values[e.form.tense],
+        person: GrammaticalPerson.values[e.form.person],
+        plurality: Plurality.values[e.form.plurality],
+        gender: GrammaticalGender.values[e.form.gender],
+      )).toList(),
+    );
+  }
 
   Future<List<VerbWordDto>> getVerbsByRootId(int rootId, String lang) async {
     final query = database.select(database.verbTable).join([

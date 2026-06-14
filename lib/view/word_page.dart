@@ -1,4 +1,5 @@
 import 'package:almi3/model/dto/root_dto.dart';
+import 'package:almi3/view/verb_screen.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/word_chip.dart';
 import 'package:almi3/viewmodel/state/word_page_state.dart';
@@ -63,6 +64,12 @@ class WordPage extends ConsumerWidget {
               isBookmarked: state.isBookmarked(w.id),
               onBookmarkToggle: () =>
                   ref.read(wordPageProvider(root.id).notifier).toggleBookmark(w.id),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VerbScreen(verbId: w.id, rootValue: root.value),
+                ),
+              ),
             );
           }).toList(),
         ),

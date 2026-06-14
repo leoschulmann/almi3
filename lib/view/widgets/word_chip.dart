@@ -13,6 +13,7 @@ class WordChip extends StatefulWidget {
   final WordType type;
   final bool isBookmarked;
   final VoidCallback? onBookmarkToggle;
+  final VoidCallback? onTap;
 
   const WordChip({
     super.key,
@@ -21,6 +22,7 @@ class WordChip extends StatefulWidget {
     required this.type,
     this.isBookmarked = false,
     this.onBookmarkToggle,
+    this.onTap,
   });
 
   @override
@@ -84,6 +86,7 @@ class _WordChipState extends State<WordChip> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final color = widget.type.textColor;
     return GestureDetector(
+      onTap: widget.onTap,
       onLongPress: () {
         HapticFeedback.mediumImpact();
         _pulseController.forward(from: 0);

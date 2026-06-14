@@ -76,7 +76,7 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
               colors: [AppColors.rootCard, AppColors.rootCardGradient],
             ),
             boxShadow: const [
-              BoxShadow(color: Color(0x35000000), blurRadius: 8, spreadRadius: 1, offset: Offset(0, 3)),
+              BoxShadow(color: AppColors.cardShadow, blurRadius: 8, spreadRadius: 1, offset: Offset(0, 3)),
             ],
           ),
           child: ClipRRect(

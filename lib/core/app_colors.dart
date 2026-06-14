@@ -23,4 +23,8 @@ class AppColors {
   static const Color rootCardGradient = Color(0xFFF0F0F0);
   
   static const Color rootCardText = Color(0xFF313031);
+
+  static const Color textPrimary = Color(0xFF2D2D2D);
+  static const Color textSecondary = Color(0xFF6D6C6C);
+  static const Color cardShadow = Color(0x35000000);
 }
