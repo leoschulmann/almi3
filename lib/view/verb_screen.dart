@@ -7,6 +7,7 @@ import 'package:almi3/view/widgets/binyan_named_icon.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
 import 'package:almi3/view/widgets/word_title.dart';
+import 'package:almi3/viewmodel/state/verb_screen_state.dart';
 import 'package:almi3/viewmodel/verb_screen_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,11 +33,11 @@ class VerbScreen extends ConsumerWidget {
         centerTitle: true,
         actions: const [NiqqudBtn()],
       ),
-      body: _buildBody(context, state),
+      body: _buildBody(context, ref, state),
     );
   }
 
-  Widget _buildBody(BuildContext context, state) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, VerbScreenState state) {
     if (state.isLoading) return const Center(child: CircularProgressIndicator());
     if (state.errMsg != null) return Center(child: Text('Error: ${state.errMsg}'));
     final verb = state.verb;
@@ -47,14 +48,14 @@ class VerbScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _MainSection(verb: verb),
-          ..._buildTenseSections(context, verb),
+          ..._buildTenseSections(context, ref, state, verb),
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  List<Widget> _buildTenseSections(BuildContext context, VerbDetailDto verb) {
+  List<Widget> _buildTenseSections(BuildContext context, WidgetRef ref, VerbScreenState state, VerbDetailDto verb) {
     final formsByTense = <Tense, List<VerbFormDisplayDto>>{};
     for (final f in verb.forms) {
       formsByTense.putIfAbsent(f.tense, () => []).add(f);
@@ -67,6 +68,9 @@ class VerbScreen extends ConsumerWidget {
               tense: t,
               forms: formsByTense[t]!,
               onChipTap: (form) => _onChipTap(context, verb, form),
+              isFormBookmarked: (formId) => state.isFormBookmarked(formId),
+              onFormBookmarkToggle: (formId) =>
+                  ref.read(verbScreenProvider(verbId).notifier).toggleFormBookmark(formId),
             ))
         .toList();
   }

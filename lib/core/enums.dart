@@ -26,7 +26,7 @@ const kTenseDisplayOrder = [
   Tense.imperative,
 ];
 
-enum BookmarkType { root, verb, noun, adjective }
+enum BookmarkType { root, verb, noun, adjective, verbForm }
 
 enum WordType {
   verb(

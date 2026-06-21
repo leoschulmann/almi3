@@ -9,6 +9,8 @@ class VerbTenseSection extends StatelessWidget {
   final Tense tense;
   final List<VerbFormDisplayDto> forms;
   final void Function(VerbFormDisplayDto form)? onChipTap;
+  final bool Function(int formId)? isFormBookmarked;
+  final void Function(int formId)? onFormBookmarkToggle;
 
   const VerbTenseSection({
     super.key,
@@ -16,6 +18,8 @@ class VerbTenseSection extends StatelessWidget {
     required this.tense,
     required this.forms,
     this.onChipTap,
+    this.isFormBookmarked,
+    this.onFormBookmarkToggle,
   });
 
   @override
@@ -61,7 +65,9 @@ class VerbTenseSection extends StatelessWidget {
                   iconPerson: isPresentLike ? c.slot.person : null,
                   iconPlurality: isPresentLike ? c.slot.plurality : null,
                   iconGender: isPresentLike ? c.slot.gender : null,
+                  isBookmarked: isFormBookmarked?.call(c.form.id) ?? false,
                   onTap: onChipTap != null ? () => onChipTap!(c.form) : null,
+                  onBookmarkToggle: onFormBookmarkToggle != null ? () => onFormBookmarkToggle!(c.form.id) : null,
                 ),
                 const SizedBox(width: 7),
               ])
