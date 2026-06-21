@@ -91,7 +91,7 @@ class ReferencePage extends ConsumerWidget {
                   return RootCard(
                     hebrewText: root.value,
                     adjCount: 0,
-                    verbCount: 0,
+                    verbCount: state.verbCount(root.id),
                     nounCount: 0,
                     isBookmarked: state.isBookmarked(root.id),
                     onTap: () => Navigator.of(context).push(

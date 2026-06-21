@@ -1,6 +1,8 @@
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/repository/bookmark_repository.dart';
 import 'package:almi3/model/repository/root_repository.dart';
+import 'package:almi3/model/repository/verb_repository.dart';
 import 'package:almi3/viewmodel/state/reference_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ final bookmarkRepositoryProvider =
 class ReferencePageNotifier extends Notifier<ReferencePageState> {
   late RootRepository _rootRepo;
   late BookmarkRepository _bookmarkRepo;
+  late VerbRepository _verbRepo;
   int _page = 0;
   static const int _size = 20;
 
@@ -23,6 +26,7 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
   ReferencePageState build() {
     _rootRepo = ref.watch(rootRepositoryProvider);
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
+    _verbRepo = ref.watch(verbRepositoryProvider);
     ref.watch(syncCounterProvider);
     Future.microtask(() => _loadInit());
     return const ReferencePageState();
@@ -31,15 +35,14 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
   Future<void> _loadInit() async {
     try {
       state = state.copyWith(isLoading: true, errMsg: null);
-      final results = await Future.wait([
-        _rootRepo.getRootsPaged(_page, _size),
-        _bookmarkRepo.getBookmarkedIds(BookmarkType.root),
-      ]);
-      final roots = results[0] as dynamic;
-      final bookmarks = results[1] as Set<int>;
+      final roots = await _rootRepo.getRootsPaged(_page, _size);
+      final bookmarks = await _bookmarkRepo.getBookmarkedIds(BookmarkType.root);
+      final rootIds = roots.map((r) => r.id).toList();
+      final verbCounts = await _verbRepo.getVerbCountsByRootIds(rootIds);
       state = state.copyWith(
         roots: roots,
         bookmarkedRootIds: bookmarks,
+        verbCounts: verbCounts,
         isLoading: false,
         hasMore: roots.length == _size,
       );
@@ -55,8 +58,11 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
     _page++;
     try {
       final roots = await _rootRepo.getRootsPaged(_page, _size);
+      final rootIds = roots.map((r) => r.id).toList();
+      final newCounts = await _verbRepo.getVerbCountsByRootIds(rootIds);
       state = state.copyWith(
         roots: [...state.roots, ...roots],
+        verbCounts: {...state.verbCounts, ...newCounts},
         isLoading: false,
         hasMore: roots.length == _size,
       );

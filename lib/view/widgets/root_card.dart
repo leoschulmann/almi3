@@ -110,7 +110,7 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
                   ),
                 ),
                 Positioned(
-                  left: 16,
+                  right: 16,
                   top: 0,
                   bottom: 5,
                   child: Center(
@@ -125,7 +125,7 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOut,
                   top: widget.isBookmarked ? 0 : -_bookmarkHeight,
-                  right: 25,
+                  left: 25,
                   child: const BookmarkRibbon(),
                 ),
               ],

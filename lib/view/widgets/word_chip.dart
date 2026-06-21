@@ -105,6 +105,19 @@ class _WordChipState extends State<WordChip> with TickerProviderStateMixin {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+                child: widget.isBookmarked || _bookmarkController.isAnimating
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ScaleTransition(
+                          scale: _bookmarkScale,
+                          child: _BookmarkIcon(color: color),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
               Text(
                 widget.hebrewText,
                 textDirection: TextDirection.rtl,
@@ -128,19 +141,6 @@ class _WordChipState extends State<WordChip> with TickerProviderStateMixin {
                   ),
                 ),
               ],
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-                child: widget.isBookmarked || _bookmarkController.isAnimating
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: ScaleTransition(
-                          scale: _bookmarkScale,
-                          child: _BookmarkIcon(color: color),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
             ],
           ),
         ),
