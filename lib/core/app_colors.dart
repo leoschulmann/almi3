@@ -27,4 +27,6 @@ class AppColors {
   static const Color textPrimary = Color(0xFF2D2D2D);
   static const Color textSecondary = Color(0xFF6D6C6C);
   static const Color cardShadow = Color(0x35000000);
+  static const Color bubbleBackground = Color(0xFFF2F2F2);
+  static const Color searchBarBackground = Color(0x0F000000);
 }

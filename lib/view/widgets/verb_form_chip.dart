@@ -11,6 +11,7 @@ class VerbFormChip extends StatelessWidget {
   final GrammaticalPerson? iconPerson;
   final Plurality? iconPlurality;
   final GrammaticalGender? iconGender;
+  final VoidCallback? onTap;
 
   const VerbFormChip({
     super.key,
@@ -18,6 +19,7 @@ class VerbFormChip extends StatelessWidget {
     this.iconPerson,
     this.iconPlurality,
     this.iconGender,
+    this.onTap,
   });
 
   @override
@@ -27,11 +29,13 @@ class VerbFormChip extends StatelessWidget {
       iconPlurality ?? form.plurality,
       iconGender ?? form.gender,
     );
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
@@ -40,7 +44,7 @@ class VerbFormChip extends StatelessWidget {
         children: [
           Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 form.value,
@@ -49,75 +53,29 @@ class VerbFormChip extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  height: 1.1,
+                  // height: 1.1,
+                  letterSpacing: -0.1,
                 ),
               ),
-              if (form.translit.isNotEmpty)
-                Text(
-                  form.translit,
-                  textAlign: TextAlign.end,
-                  style: GoogleFonts.rubik(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w300,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.textSecondary,
-                    height: 1.2,
-                  ),
+              if (form.translit.isNotEmpty) SizedBox(height: 2),
+              Text(
+                form.translit,
+                textAlign: TextAlign.end,
+                style: GoogleFonts.rubik(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textSecondary,
+                  // height: 1.2,
                 ),
+              ),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           SvgPicture.asset(iconPath, width: 24, height: 24),
         ],
       ),
+    ),
     );
   }
 }
-
-typedef FormKey = ({GrammaticalPerson person, Plurality plurality, GrammaticalGender gender});
-
-// Display rows per tense, ordered 1st→2nd→3rd person, sg→pl, masc→fem→none.
-// For present/imperative, person is the ICON person (DB may store none).
-List<List<FormKey>> tenseFormRows(Tense tense) {
-  const mk = _mk;
-  switch (tense) {
-    case Tense.infinitive:
-      return [[mk(GrammaticalPerson.none, Plurality.none, GrammaticalGender.none)]];
-    case Tense.present:
-    case Tense.imperative:
-      return [
-        [mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.feminine)],
-      ];
-    case Tense.past:
-      return [
-        [mk(GrammaticalPerson.first, Plurality.singular, GrammaticalGender.none),
-         mk(GrammaticalPerson.first, Plurality.plural, GrammaticalGender.none)],
-        [mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.third, Plurality.plural, GrammaticalGender.none)],
-      ];
-    case Tense.future:
-      return [
-        [mk(GrammaticalPerson.first, Plurality.singular, GrammaticalGender.none),
-         mk(GrammaticalPerson.first, Plurality.plural, GrammaticalGender.none)],
-        [mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.feminine)],
-        [mk(GrammaticalPerson.third, Plurality.plural, GrammaticalGender.masculine),
-         mk(GrammaticalPerson.third, Plurality.plural, GrammaticalGender.feminine)],
-      ];
-  }
-}
-
-FormKey _mk(GrammaticalPerson p, Plurality pl, GrammaticalGender g) =>
-    (person: p, plurality: pl, gender: g);

@@ -7,7 +7,24 @@ enum GrammaticalGender { none, masculine, feminine }
 
 enum Plurality { singular, plural, none }
 
-enum Tense { present, past, future, imperative, infinitive }
+enum Tense {
+  present('Present'),
+  past('Past'),
+  future('Future'),
+  imperative('Imperative'),
+  infinitive('Infinitive');
+
+  const Tense(this.label);
+  final String label;
+}
+
+const kTenseDisplayOrder = [
+  Tense.infinitive,
+  Tense.present,
+  Tense.past,
+  Tense.future,
+  Tense.imperative,
+];
 
 enum BookmarkType { root, verb, noun, adjective }
 

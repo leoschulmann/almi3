@@ -1,3 +1,4 @@
+import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/root_card.dart';
@@ -59,7 +60,7 @@ class ReferencePage extends ConsumerWidget {
             leading: const Icon(Icons.search),
             trailing: [const Icon(Icons.mic)],
             elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(Colors.black.withValues(alpha: 0.06)),
+            backgroundColor: WidgetStateProperty.all(AppColors.searchBarBackground),
             shape: WidgetStateProperty.all(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),

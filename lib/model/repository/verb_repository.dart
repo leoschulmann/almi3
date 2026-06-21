@@ -1,5 +1,6 @@
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/dto/example_display_dto.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
 import 'package:almi3/model/dto/verb_word_dto.dart';
@@ -124,6 +125,62 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     );
   }
 
+  Future<List<VerbFormExampleGroupDto>> getExamplesForVerb(int verbId, String lang) async {
+    // SELECT * FROM verb_form_table WHERE verb_id = ?
+    final List<VerbFormTableData> formRows = await (database.select(database.verbFormTable)
+      ..where((t) => t.verbId.equals(verbId)))
+        .get();
+
+    if (formRows.isEmpty) return [];
+
+    final formIds = formRows.map((f) => f.id).toList();
+
+    // SELECT vfe.*, vfet.value
+    // FROM verb_form_example_table vfe
+    // LEFT OUTER JOIN verb_form_example_translation_table vfet
+    //   ON vfet.example_id = vfe.id AND vfet.lang = ?
+    // WHERE vfe.verb_form_id IN (?)
+    final List<TypedResult> exampleRows = await (database.select(database.verbFormExampleTable).join([
+      leftOuterJoin(
+        database.verbFormExampleTranslationTable,
+        database.verbFormExampleTranslationTable.exampleId
+            .equalsExp(database.verbFormExampleTable.id) &
+        database.verbFormExampleTranslationTable.lang.equals(lang),
+      ),
+    ])
+      ..where(database.verbFormExampleTable.verbFormId.isIn(formIds)))
+        .get();
+
+    final exampleMap = <int, ({VerbFormExampleTableData ex, String translation})>{};
+    for (final r in exampleRows) {
+      final ex = r.readTable(database.verbFormExampleTable);
+      final t9n = r.readTableOrNull(database.verbFormExampleTranslationTable);
+      exampleMap.putIfAbsent(ex.id, () => (ex: ex, translation: t9n?.value ?? ''));
+    }
+
+    final grouped = <int, List<ExampleDisplayDto>>{};
+    for (final entry in exampleMap.values) {
+      grouped.putIfAbsent(entry.ex.verbFormId, () => []).add(ExampleDisplayDto(
+        exampleId: entry.ex.id,
+        sentence: entry.ex.value,
+        translation: entry.translation,
+      ));
+    }
+
+    return formRows
+        .where((f) => grouped.containsKey(f.id))
+        .map((f) =>
+        VerbFormExampleGroupDto(
+          formId: f.id,
+          formValue: f.value,
+          tense: Tense.values[f.tense],
+          person: GrammaticalPerson.values[f.person],
+          plurality: Plurality.values[f.plurality],
+          gender: GrammaticalGender.values[f.gender],
+          examples: grouped[f.id]!,
+        ))
+        .toList();
+  }
   Future<List<VerbWordDto>> getVerbsByRootId(int rootId, String lang) async {
     final query = database.select(database.verbTable).join([
       leftOuterJoin(

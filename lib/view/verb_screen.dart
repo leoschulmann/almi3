@@ -2,9 +2,9 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
+import 'package:almi3/view/example_screen.dart';
 import 'package:almi3/view/widgets/binyan_named_icon.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
-import 'package:almi3/view/widgets/verb_form_chip.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
 import 'package:almi3/view/widgets/word_title.dart';
 import 'package:almi3/viewmodel/verb_screen_viewmodel.dart';
@@ -47,36 +47,44 @@ class VerbScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _MainSection(verb: verb),
-          ..._buildTenseSections(verb),
+          ..._buildTenseSections(context, verb),
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  List<Widget> _buildTenseSections(VerbDetailDto verb) {
+  List<Widget> _buildTenseSections(BuildContext context, VerbDetailDto verb) {
     final formsByTense = <Tense, List<VerbFormDisplayDto>>{};
     for (final f in verb.forms) {
       formsByTense.putIfAbsent(f.tense, () => []).add(f);
     }
 
-    const tenseOrder = [Tense.infinitive, Tense.present, Tense.past, Tense.future, Tense.imperative];
-    const tenseLabels = {
-      Tense.infinitive: 'Infinitive',
-      Tense.present: 'Present',
-      Tense.past: 'Past',
-      Tense.future: 'Future',
-      Tense.imperative: 'Imperative',
-    };
-
-    return tenseOrder
+    return kTenseDisplayOrder
         .where((t) => formsByTense.containsKey(t))
         .map((t) => VerbTenseSection(
-              label: tenseLabels[t]!,
+              label: t.label,
               tense: t,
               forms: formsByTense[t]!,
+              onChipTap: (form) => _onChipTap(context, verb, form),
             ))
         .toList();
+  }
+
+  void _onChipTap(BuildContext context, VerbDetailDto verb, VerbFormDisplayDto form) {
+    // Check if this verb has any examples at all — we don't know per-form yet
+    // without an extra query, so we navigate and let the screen handle empty state.
+    // For a snackbar on zero examples we rely on ExampleScreen itself.
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExampleScreen(
+          verbId: verbId,
+          verbValue: verb.value,
+          focusedFormId: form.id,
+        ),
+      ),
+    );
   }
 }
 

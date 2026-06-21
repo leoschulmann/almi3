@@ -1,16 +1,22 @@
-import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
+import 'package:almi3/view/widgets/tense_section_header.dart';
 import 'package:almi3/view/widgets/verb_form_chip.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class VerbTenseSection extends StatelessWidget {
   final String label;
   final Tense tense;
   final List<VerbFormDisplayDto> forms;
+  final void Function(VerbFormDisplayDto form)? onChipTap;
 
-  const VerbTenseSection({super.key, required this.label, required this.tense, required this.forms});
+  const VerbTenseSection({
+    super.key,
+    required this.label,
+    required this.tense,
+    required this.forms,
+    this.onChipTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,7 @@ class VerbTenseSection extends StatelessWidget {
 
     return Column(
       children: [
-        _SectionHeader(label: label),
+        TenseSectionHeader(label: label),
         const SizedBox(height: 12),
         ...rows.map((rowKeys) {
           final chips = rowKeys.map((slot) {
@@ -55,6 +61,7 @@ class VerbTenseSection extends StatelessWidget {
                   iconPerson: isPresentLike ? c.slot.person : null,
                   iconPlurality: isPresentLike ? c.slot.plurality : null,
                   iconGender: isPresentLike ? c.slot.gender : null,
+                  onTap: onChipTap != null ? () => onChipTap!(c.form) : null,
                 ),
                 const SizedBox(width: 7),
               ])
@@ -70,33 +77,6 @@ class VerbTenseSection extends StatelessWidget {
 }
 
 
-class _SectionHeader extends StatelessWidget {
-  final String label;
-
-  const _SectionHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: Container(height: 1, color: AppColors.verbMain)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Text(
-            label,
-            style: GoogleFonts.notoSans(
-              fontSize: 20,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w400,
-              color: AppColors.verbMain,
-            ),
-          ),
-        ),
-        Expanded(child: Container(height: 1, color: AppColors.verbMain)),
-      ],
-    );
-  }
-}
 
 extension<T> on List<T?> {
   T? firstWhereOrNull(bool Function(T) test) {
@@ -106,3 +86,51 @@ extension<T> on List<T?> {
     return null;
   }
 }
+
+typedef FormKey = ({GrammaticalPerson person, Plurality plurality, GrammaticalGender gender});
+
+// Display rows per tense, ordered 1st→2nd→3rd person, sg→pl, masc→fem→none.
+// For present/imperative, person is the ICON person (DB may store none).
+List<List<FormKey>> tenseFormRows(Tense tense) {
+  const mk = _mk;
+  switch (tense) {
+    case Tense.infinitive:
+      return [[mk(GrammaticalPerson.none, Plurality.none, GrammaticalGender.none)]];
+    case Tense.present:
+    case Tense.imperative:
+      return [
+        [mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.feminine)],
+      ];
+    case Tense.past:
+      return [
+        [mk(GrammaticalPerson.first, Plurality.singular, GrammaticalGender.none),
+          mk(GrammaticalPerson.first, Plurality.plural, GrammaticalGender.none)],
+        [mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.third, Plurality.plural, GrammaticalGender.none)],
+      ];
+    case Tense.future:
+      return [
+        [mk(GrammaticalPerson.first, Plurality.singular, GrammaticalGender.none),
+          mk(GrammaticalPerson.first, Plurality.plural, GrammaticalGender.none)],
+        [mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.second, Plurality.singular, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.second, Plurality.plural, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.third, Plurality.singular, GrammaticalGender.feminine)],
+        [mk(GrammaticalPerson.third, Plurality.plural, GrammaticalGender.masculine),
+          mk(GrammaticalPerson.third, Plurality.plural, GrammaticalGender.feminine)],
+      ];
+  }
+}
+
+FormKey _mk(GrammaticalPerson p, Plurality pl, GrammaticalGender g) =>
+    (person: p, plurality: pl, gender: g);
