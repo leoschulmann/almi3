@@ -11,6 +11,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+const _noExamplesSnackBar = SnackBar(
+  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+  content: Text('No examples for this form yet', textAlign: TextAlign.center),
+);
+
 class ExampleScreen extends ConsumerStatefulWidget {
   final int verbId;
   final String verbValue;
@@ -53,7 +58,7 @@ class _ExampleScreenState extends ConsumerState<ExampleScreen> {
       if (!next.groups.any((g) => g.formId == fid)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No examples for this form yet')));
+          ScaffoldMessenger.of(context).showSnackBar(_noExamplesSnackBar);
         });
         return;
       }
@@ -71,7 +76,7 @@ class _ExampleScreenState extends ConsumerState<ExampleScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         if (!state.groups.any((g) => g.formId == fid)) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No examples for this form yet')));
+          ScaffoldMessenger.of(context).showSnackBar(_noExamplesSnackBar);
         } else {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) _scrollToForm(fid);

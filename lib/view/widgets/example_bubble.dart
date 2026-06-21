@@ -23,57 +23,109 @@ class ExampleBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 40, 0),
-      child: AnimatedContainer(
+      child: TweenAnimationBuilder<Color?>(
+        tween: ColorTween(
+          begin: Colors.transparent,
+          end: outlined ? AppColors.verbMain : Colors.transparent,
+        ),
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          color: AppColors.bubbleBackground,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: outlined ? AppColors.verbMain : Colors.transparent,
-            width: 1,
+        builder: (context, borderColor, child) => CustomPaint(
+          painter: _BubblePainter(
+            fillColor: AppColors.bubbleBackground,
+            borderColor: borderColor ?? Colors.transparent,
           ),
+          child: child,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Icon(Icons.volume_up_outlined,
-                  size: 20, color: AppColors.textSecondary),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _HighlightedSentence(
-                      sentence: example.sentence, formValue: formValue),
-                  const SizedBox(height: 4),
-                  Text(
-                    example.translation,
-                    textAlign: TextAlign.end,
-                    style: GoogleFonts.rubik(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.textSecondary,
+        child: Padding(
+          // left = tailWidth(5) + inner(12); others unchanged
+          padding: const EdgeInsets.fromLTRB(17, 10, 12, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.volume_up_outlined,
+                    size: 20, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _HighlightedSentence(
+                        sentence: example.sentence, formValue: formValue),
+                    const SizedBox(height: 4),
+                    Text(
+                      example.translation,
+                      textAlign: TextAlign.end,
+                      style: GoogleFonts.rubik(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w300,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: SvgPicture.asset(iconPath, width: 24, height: 24),
-            ),
-          ],
+              const SizedBox(width: 12),
+              SvgPicture.asset(iconPath, width: 24, height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+// Paints the chat-bubble shape: rounded rect with a bottom-left tail.
+// The tail is 5px wide and ~16px tall; all other dimensions scale with widget size.
+class _BubblePainter extends CustomPainter {
+  final Color fillColor;
+  final Color borderColor;
+
+  const _BubblePainter({required this.fillColor, required this.borderColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _buildPath(size);
+    canvas.drawPath(path, Paint()..color = fillColor);
+    if (borderColor.a > 0) {
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = borderColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0,
+      );
+    }
+  }
+
+  Path _buildPath(Size size) {
+    final w = size.width;
+    final h = size.height;
+    const r = 16.0;
+    const tw = 5.0;
+    const tailH = 21.0;
+
+    final rectPath = Path()
+      ..addRRect(RRect.fromLTRBR(tw, 0, w, h, const Radius.circular(r)));
+
+    // Tail shape in its own 18×21 coordinate space, translated to bottom-left of rect.
+    final dy = h - tailH;
+    final tailPath = Path()
+      ..moveTo(5, dy + 13.3171)
+      ..lineTo(5, dy)
+      ..lineTo(18, dy + 5.77156)
+      ..cubicTo(16.3333, dy + 9.26948, 12.6106, dy + 15.866,  11,  dy + 17.3147)
+      ..cubicTo(7.5,     dy + 20.4628, 6.5,     dy + 21,       0,   dy + 21)
+      ..cubicTo(2,       dy + 19.4634, 5,       dy + 17.5146,  5,   dy + 13.3171)
+      ..close();
+
+    return Path.combine(PathOperation.union, rectPath, tailPath);
+  }
+
+  @override
+  bool shouldRepaint(_BubblePainter old) =>
+      old.fillColor != fillColor || old.borderColor != borderColor;
 }
 
 class _HighlightedSentence extends StatelessWidget {
