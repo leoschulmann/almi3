@@ -3,7 +3,7 @@ import 'package:almi3/model/repository/binyan_repository.dart';
 import 'package:almi3/model/repository/gizrah_repo.dart';
 import 'package:almi3/model/repository/prep_repo.dart';
 import 'package:almi3/model/repository/root_repository.dart';
-import 'package:almi3/viewmodel/reference_viewmodel.dart';
+import 'package:almi3/viewmodel/root_list_viewmodel.dart';
 import 'package:almi3/viewmodel/simple_sync_viewmodel.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:drift/native.dart';
@@ -59,9 +59,9 @@ void main() {
       expect(notifier, isA<SimpleSyncViewmodelNotifier>());
     });
 
-    test('referencePageProvider provides ReferencePageNotifier', () async {
-      final notifier = container.read(referencePageProvider.notifier);
-      expect(notifier, isA<ReferencePageNotifier>());
+    test('rootListPageProvider provides RootListPageNotifier', () async {
+      final notifier = container.read(rootListPageProvider.notifier);
+      expect(notifier, isA<RootListPageNotifier>());
       // Allow async init to complete before tearDown disposes the container
       await Future.delayed(Duration.zero);
     });

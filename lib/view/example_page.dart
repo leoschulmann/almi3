@@ -5,8 +5,8 @@ import 'package:almi3/view/widgets/example_form_section.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/tense_section_header.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
-import 'package:almi3/viewmodel/example_screen_viewmodel.dart';
-import 'package:almi3/viewmodel/state/example_screen_state.dart';
+import 'package:almi3/viewmodel/example_page_viewmodel.dart';
+import 'package:almi3/viewmodel/state/example_page_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,18 +16,18 @@ const _noExamplesSnackBar = SnackBar(
   content: Text('No examples for this form yet', textAlign: TextAlign.center),
 );
 
-class ExampleScreen extends ConsumerStatefulWidget {
+class ExamplePage extends ConsumerStatefulWidget {
   final int verbId;
   final String verbValue;
   final int? focusedFormId;
 
-  const ExampleScreen({super.key, required this.verbId, required this.verbValue, this.focusedFormId});
+  const ExamplePage({super.key, required this.verbId, required this.verbValue, this.focusedFormId});
 
   @override
-  ConsumerState<ExampleScreen> createState() => _ExampleScreenState();
+  ConsumerState<ExamplePage> createState() => _ExamplePageState();
 }
 
-class _ExampleScreenState extends ConsumerState<ExampleScreen> {
+class _ExamplePageState extends ConsumerState<ExamplePage> {
   final _scrollController = ScrollController();
   final _formKeys = <int, GlobalKey>{};
   bool _focusHandled = false;
@@ -50,7 +50,7 @@ class _ExampleScreenState extends ConsumerState<ExampleScreen> {
   Widget build(BuildContext context) {
     final fid = widget.focusedFormId;
 
-    ref.listen(exampleScreenProvider(widget.verbId), (ExampleScreenState? prev, ExampleScreenState next) {
+    ref.listen(examplePageProvider(widget.verbId), (ExamplePageState? prev, ExamplePageState next) {
       if (next.isLoading || next.errMsg != null) return;
       if (fid == null || _focusHandled) return;
       _focusHandled = true;
@@ -68,7 +68,7 @@ class _ExampleScreenState extends ConsumerState<ExampleScreen> {
       });
     });
 
-    final state = ref.watch(exampleScreenProvider(widget.verbId));
+    final state = ref.watch(examplePageProvider(widget.verbId));
 
     // Handle already-loaded case: provider was cached, listener won't fire.
     if (!state.isLoading && state.errMsg == null && fid != null && !_focusHandled) {
@@ -103,7 +103,7 @@ class _ExampleScreenState extends ConsumerState<ExampleScreen> {
     Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 400), curve: Curves.easeOut, alignment: 0.2);
   }
 
-  Widget _buildBody(ExampleScreenState state) {
+  Widget _buildBody(ExamplePageState state) {
     if (state.isLoading) return const Center(child: CircularProgressIndicator());
     if (state.errMsg != null) return Center(child: Text('Error: ${state.errMsg}'));
     if (state.groups.isEmpty) {

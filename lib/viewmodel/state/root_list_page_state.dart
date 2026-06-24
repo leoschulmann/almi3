@@ -1,6 +1,6 @@
 import '../../model/dto/root_dto.dart';
 
-class ReferencePageState {
+class RootListPageState {
   final List<RootDto> roots;
   final bool isLoading;
   final bool hasMore;
@@ -8,13 +8,13 @@ class ReferencePageState {
   final Set<int> bookmarkedRootIds;
   final Map<int, int> verbCounts;
 
-  const ReferencePageState({this.roots = const [], this.isLoading = false, this.hasMore = true, this.errMsg,
+  const RootListPageState({this.roots = const [], this.isLoading = false, this.hasMore = true, this.errMsg,
     this.bookmarkedRootIds = const {}, this.verbCounts = const {},
   });
 
-  ReferencePageState copyWith({List<RootDto>? roots, bool? isLoading, bool? hasMore, String? errMsg,
+  RootListPageState copyWith({List<RootDto>? roots, bool? isLoading, bool? hasMore, String? errMsg,
     Set<int>? bookmarkedRootIds, Map<int, int>? verbCounts}) {
-    return ReferencePageState(
+    return RootListPageState(
       roots: roots ?? this.roots,
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,

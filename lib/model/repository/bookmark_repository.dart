@@ -1,7 +1,12 @@
 import 'package:almi3/model/db/db.dart';
+import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/enums.dart';
+
+final bookmarkRepositoryProvider =
+    Provider((ref) => BookmarkRepository(ref.watch(appDatabaseProvider)));
 
 class BookmarkRepository {
   final AppDatabase database;

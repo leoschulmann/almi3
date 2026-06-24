@@ -1,12 +1,12 @@
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 
-class VerbScreenState {
+class VerbPageState {
   final VerbDetailDto? verb;
   final bool isLoading;
   final String? errMsg;
   final Set<int> bookmarkedFormIds;
 
-  const VerbScreenState({
+  const VerbPageState({
     this.verb,
     this.isLoading = false,
     this.errMsg,
@@ -15,8 +15,8 @@ class VerbScreenState {
 
   bool isFormBookmarked(int formId) => bookmarkedFormIds.contains(formId);
 
-  VerbScreenState copyWith({VerbDetailDto? verb, bool? isLoading, String? errMsg, Set<int>? bookmarkedFormIds}) {
-    return VerbScreenState(
+  VerbPageState copyWith({VerbDetailDto? verb, bool? isLoading, String? errMsg, Set<int>? bookmarkedFormIds}) {
+    return VerbPageState(
       verb: verb ?? this.verb,
       isLoading: isLoading ?? this.isLoading,
       errMsg: errMsg ?? this.errMsg,

@@ -2,19 +2,16 @@ import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/repository/bookmark_repository.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';
-import 'package:almi3/viewmodel/state/reference_page_state.dart';
+import 'package:almi3/viewmodel/state/root_list_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/enums.dart';
 
-final referencePageProvider =
-    NotifierProvider<ReferencePageNotifier, ReferencePageState>(ReferencePageNotifier.new);
+final rootListPageProvider =
+    NotifierProvider<RootListPageNotifier, RootListPageState>(RootListPageNotifier.new);
 
-final bookmarkRepositoryProvider =
-    Provider((ref) => BookmarkRepository(ref.watch(appDatabaseProvider)));
-
-class ReferencePageNotifier extends Notifier<ReferencePageState> {
+class RootListPageNotifier extends Notifier<RootListPageState> {
   late RootRepository _rootRepo;
   late BookmarkRepository _bookmarkRepo;
   late VerbRepository _verbRepo;
@@ -22,13 +19,13 @@ class ReferencePageNotifier extends Notifier<ReferencePageState> {
   static const int _size = 20;
 
   @override
-  ReferencePageState build() {
+  RootListPageState build() {
     _rootRepo = ref.watch(rootRepositoryProvider);
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
     _verbRepo = ref.watch(verbRepositoryProvider);
     ref.watch(syncCounterProvider);
     Future.microtask(() => _loadInit());
-    return const ReferencePageState();
+    return const RootListPageState();
   }
 
   Future<void> _loadInit() async {

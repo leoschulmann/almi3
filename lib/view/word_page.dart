@@ -1,5 +1,5 @@
 import 'package:almi3/model/dto/root_dto.dart';
-import 'package:almi3/view/verb_screen.dart';
+import 'package:almi3/view/verb_page.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/word_chip.dart';
 import 'package:almi3/viewmodel/state/word_page_state.dart';
@@ -67,7 +67,7 @@ class WordPage extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => VerbScreen(verbId: w.id, rootValue: root.value),
+                  builder: (_) => VerbPage(verbId: w.id, rootValue: root.value),
                 ),
               ),
             );

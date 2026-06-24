@@ -1,22 +1,22 @@
 import 'package:almi3/model/dto/example_display_dto.dart';
 
-class ExampleScreenState {
+class ExamplePageState {
   final List<VerbFormExampleGroupDto> groups;
   final bool isLoading;
   final String? errMsg;
 
-  const ExampleScreenState({
+  const ExamplePageState({
     this.groups = const [],
     this.isLoading = false,
     this.errMsg,
   });
 
-  ExampleScreenState copyWith({
+  ExamplePageState copyWith({
     List<VerbFormExampleGroupDto>? groups,
     bool? isLoading,
     String? errMsg,
   }) {
-    return ExampleScreenState(
+    return ExamplePageState(
       groups: groups ?? this.groups,
       isLoading: isLoading ?? this.isLoading,
       errMsg: errMsg ?? this.errMsg,

@@ -2,16 +2,15 @@ import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/repository/bookmark_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';
-import 'package:almi3/viewmodel/reference_viewmodel.dart';
-import 'package:almi3/viewmodel/state/verb_screen_state.dart';
+import 'package:almi3/viewmodel/state/verb_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final verbScreenProvider =
-    NotifierProvider.family<VerbScreenNotifier, VerbScreenState, int>((verbId) => VerbScreenNotifier(verbId));
+final verbPageProvider =
+    NotifierProvider.family<VerbPageNotifier, VerbPageState, int>((verbId) => VerbPageNotifier(verbId));
 
-class VerbScreenNotifier extends Notifier<VerbScreenState> {
-  VerbScreenNotifier(this._verbId);
+class VerbPageNotifier extends Notifier<VerbPageState> {
+  VerbPageNotifier(this._verbId);
 
   final int _verbId;
   late VerbRepository _verbRepo;
@@ -20,11 +19,11 @@ class VerbScreenNotifier extends Notifier<VerbScreenState> {
   static const String _lang = 'EN';
 
   @override
-  VerbScreenState build() {
+  VerbPageState build() {
     _verbRepo = ref.watch(verbRepositoryProvider);
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
     Future.microtask(_load);
-    return const VerbScreenState(isLoading: true);
+    return const VerbPageState(isLoading: true);
   }
 
   Future<void> _load() async {
@@ -33,7 +32,7 @@ class VerbScreenNotifier extends Notifier<VerbScreenState> {
       final bookmarkedFormIds = await _bookmarkRepo.getBookmarkedIds(BookmarkType.verbForm);
       state = state.copyWith(verb: detail, isLoading: false, bookmarkedFormIds: bookmarkedFormIds);
     } catch (e, st) {
-      logger.e('VerbScreenNotifier._load error', error: e, stackTrace: st);
+      logger.e('VerbPageNotifier._load error', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false, errMsg: e.toString());
     }
   }

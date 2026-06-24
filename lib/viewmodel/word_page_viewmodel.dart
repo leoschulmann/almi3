@@ -1,7 +1,6 @@
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/repository/bookmark_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';
-import 'package:almi3/viewmodel/reference_viewmodel.dart';
 import 'package:almi3/viewmodel/state/word_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

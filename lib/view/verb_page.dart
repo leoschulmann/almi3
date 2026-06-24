@@ -2,27 +2,27 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
-import 'package:almi3/view/example_screen.dart';
+import 'package:almi3/view/example_page.dart';
 import 'package:almi3/view/widgets/binyan_named_icon.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
 import 'package:almi3/view/widgets/word_title.dart';
-import 'package:almi3/viewmodel/state/verb_screen_state.dart';
-import 'package:almi3/viewmodel/verb_screen_viewmodel.dart';
+import 'package:almi3/viewmodel/state/verb_page_state.dart';
+import 'package:almi3/viewmodel/verb_page_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class VerbScreen extends ConsumerWidget {
+class VerbPage extends ConsumerWidget {
   final int verbId;
   final String rootValue;
 
-  const VerbScreen({super.key, required this.verbId, required this.rootValue});
+  const VerbPage({super.key, required this.verbId, required this.rootValue});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(verbScreenProvider(verbId));
+    final state = ref.watch(verbPageProvider(verbId));
 
     return Scaffold(
       appBar: AppBar(
@@ -37,7 +37,7 @@ class VerbScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, VerbScreenState state) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, VerbPageState state) {
     if (state.isLoading) return const Center(child: CircularProgressIndicator());
     if (state.errMsg != null) return Center(child: Text('Error: ${state.errMsg}'));
     final verb = state.verb;
@@ -55,7 +55,7 @@ class VerbScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildTenseSections(BuildContext context, WidgetRef ref, VerbScreenState state, VerbDetailDto verb) {
+  List<Widget> _buildTenseSections(BuildContext context, WidgetRef ref, VerbPageState state, VerbDetailDto verb) {
     final formsByTense = <Tense, List<VerbFormDisplayDto>>{};
     for (final f in verb.forms) {
       formsByTense.putIfAbsent(f.tense, () => []).add(f);
@@ -70,19 +70,16 @@ class VerbScreen extends ConsumerWidget {
               onChipTap: (form) => _onChipTap(context, verb, form),
               isFormBookmarked: (formId) => state.isFormBookmarked(formId),
               onFormBookmarkToggle: (formId) =>
-                  ref.read(verbScreenProvider(verbId).notifier).toggleFormBookmark(formId),
+                  ref.read(verbPageProvider(verbId).notifier).toggleFormBookmark(formId),
             ))
         .toList();
   }
 
   void _onChipTap(BuildContext context, VerbDetailDto verb, VerbFormDisplayDto form) {
-    // Check if this verb has any examples at all — we don't know per-form yet
-    // without an extra query, so we navigate and let the screen handle empty state.
-    // For a snackbar on zero examples we rely on ExampleScreen itself.
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ExampleScreen(
+        builder: (_) => ExamplePage(
           verbId: verbId,
           verbValue: verb.value,
           focusedFormId: form.id,
@@ -113,7 +110,6 @@ class _MainSection extends StatelessWidget {
               children: [
                 Align(
                   alignment: Alignment.topLeft,
-                  //todo move to widget
                   child: SvgPicture.asset(heartIconAsset(0), width: 42, height: 36),
                 ),
                 Align(
