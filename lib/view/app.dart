@@ -1,5 +1,7 @@
-import 'package:almi3/view/reference_page.dart';
+import 'package:almi3/view/root_list_page.dart';
+import 'package:almi3/view/widgets/browse_popup_menu.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'learn_page.dart';
@@ -37,15 +39,16 @@ class _MainNavigationState extends State<MainNavigation> {
     GlobalKey<NavigatorState>(),
   ];
 
+  // Used to position the Browse popup above the correct nav item.
+  final GlobalKey _browseNavKey = GlobalKey();
+
   final List<Widget> _roots = const [
-    ReferencePage(),
+    RootListPage(),
     LearnPage(),
     QuizPage(),
     SyncPage(),
   ];
 
-  // Pop within the active tab's navigator on Android back; exit app only when
-  // the tab stack is at root.
   Future<bool> _onWillPop() async {
     final nav = _navigatorKeys[_selectedIndex].currentState;
     if (nav != null && nav.canPop()) {
@@ -53,6 +56,20 @@ class _MainNavigationState extends State<MainNavigation> {
       return false;
     }
     return true;
+  }
+
+  void _onBrowseLongPress() {
+    HapticFeedback.mediumImpact();
+    showBrowsePopupMenu(
+      context: context,
+      anchorKey: _browseNavKey,
+      onSelect: (page) {
+        setState(() => _selectedIndex = 0);
+        _navigatorKeys[0].currentState?.push(
+          MaterialPageRoute(builder: (_) => page),
+        );
+      },
+    );
   }
 
   @override
@@ -69,7 +86,6 @@ class _MainNavigationState extends State<MainNavigation> {
       child: Scaffold(
         body: Stack(
           children: List.generate(_roots.length, (i) {
-            // Keep all tab navigators alive so state is preserved when switching.
             return Offstage(
               offstage: _selectedIndex != i,
               child: Navigator(
@@ -81,16 +97,90 @@ class _MainNavigationState extends State<MainNavigation> {
             );
           }),
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Reference'),
-            BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Learn'),
-            BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
-            BottomNavigationBarItem(icon: Icon(Icons.sync), label: 'Sync'),
-          ],
-          currentIndex: _selectedIndex,
-          onTap: (idx) => setState(() => _selectedIndex = idx),
-          type: BottomNavigationBarType.fixed,
+        bottomNavigationBar: _CustomBottomNav(
+          selectedIndex: _selectedIndex,
+          browseNavKey: _browseNavKey,
+          onTap: (idx) {
+            // Tapping Browse always resets it to RootListPage.
+            if (idx == 0) {
+              _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
+            }
+            setState(() => _selectedIndex = idx);
+          },
+          onBrowseLongPress: _onBrowseLongPress,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Custom bottom nav — identical visuals to BottomNavigationBarType.fixed but
+// exposes per-item long press for the Browse item.
+// ---------------------------------------------------------------------------
+
+class _CustomBottomNav extends StatelessWidget {
+  final int selectedIndex;
+  final GlobalKey browseNavKey;
+  final ValueChanged<int> onTap;
+  final VoidCallback onBrowseLongPress;
+
+  const _CustomBottomNav({
+    required this.selectedIndex,
+    required this.browseNavKey,
+    required this.onTap,
+    required this.onBrowseLongPress,
+  });
+
+  static const _items = [
+    (icon: Icons.book, label: 'Browse'),
+    (icon: Icons.school, label: 'Learn'),
+    (icon: Icons.quiz, label: 'Quiz'),
+    (icon: Icons.sync, label: 'Sync'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final selectedColor = theme.colorScheme.primary;
+    final unselectedColor = theme.unselectedWidgetColor;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Material(
+      elevation: 8,
+      color: theme.colorScheme.surface,
+      child: SizedBox(
+        height: kBottomNavigationBarHeight + bottomPadding,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottomPadding),
+          child: Row(
+            children: List.generate(_items.length, (i) {
+              final item = _items[i];
+              final isSelected = selectedIndex == i;
+              final color = isSelected ? selectedColor : unselectedColor;
+              final isBrowse = i == 0;
+
+              return Expanded(
+                child: GestureDetector(
+                  key: isBrowse ? browseNavKey : null,
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(i),
+                  onLongPress: isBrowse ? onBrowseLongPress : null,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(item.icon, color: color),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.label,
+                        style: theme.textTheme.labelSmall?.copyWith(color: color),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
