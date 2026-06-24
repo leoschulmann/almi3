@@ -4,6 +4,7 @@ import 'package:almi3/model/repository/gizrah_repo.dart';
 import 'package:almi3/model/repository/prep_repo.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/viewmodel/reference_viewmodel.dart';
+import 'package:almi3/viewmodel/simple_sync_viewmodel.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,9 +54,9 @@ void main() {
       expect(repo, isA<GizrahRepository>());
     });
 
-    test('rootViewmodelProvider provides SyncViewmodelNotifier', () {
-      final notifier = container.read(rootViewmodelProvider.notifier);
-      expect(notifier, isA<SyncViewmodelNotifier>());
+    test('simpleSyncViewmodelProvider provides SimpleSyncViewmodelNotifier', () {
+      final notifier = container.read(simpleSyncViewmodelProvider.notifier);
+      expect(notifier, isA<SimpleSyncViewmodelNotifier>());
     });
 
     test('referencePageProvider provides ReferencePageNotifier', () async {
@@ -66,7 +67,7 @@ void main() {
     });
 
     test('SyncViewmodelState has correct initial values', () {
-      final state = container.read(rootViewmodelProvider);
+      final state = container.read(simpleSyncViewmodelProvider);
       expect(state.isLoading, false);
       expect(state.inserted, 0);
       expect(state.updated, 0);

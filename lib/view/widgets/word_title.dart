@@ -61,7 +61,7 @@ class WordTitle extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Container(
+            SizedBox(
               width: translationWidth,
               // decoration: BoxDecoration(border: Border.all(color: Colors.red, width: 1)),
               child: AutoSizeText(
@@ -81,7 +81,7 @@ class WordTitle extends StatelessWidget {
               width: gap,
               // decoration: BoxDecoration(border: Border.all(color: Colors.green, width: 1)),
             ),
-            Container(
+            SizedBox(
               width: hebrewWidth,
               // decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 1)),
               child: ShaderMask(

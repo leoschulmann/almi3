@@ -1,5 +1,4 @@
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/repository/bookmark_repository.dart';
 import 'package:almi3/model/repository/root_repository.dart';
 import 'package:almi3/model/repository/verb_repository.dart';

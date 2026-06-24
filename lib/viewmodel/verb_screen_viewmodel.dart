@@ -53,7 +53,11 @@ class VerbScreenNotifier extends Notifier<VerbScreenState> {
     } catch (e, st) {
       logger.e('toggleFormBookmark error', error: e, stackTrace: st);
       final rollback = Set<int>.from(state.bookmarkedFormIds);
-      if (willBeBookmarked) rollback.remove(formId); else rollback.add(formId);
+      if (willBeBookmarked) {
+        rollback.remove(formId);
+      } else {
+        rollback.add(formId);
+      }
       state = state.copyWith(bookmarkedFormIds: rollback);
     }
   }
