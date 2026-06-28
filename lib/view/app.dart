@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/view/root_list_page.dart';
 import 'package:almi3/view/widgets/browse_popup_menu.dart';
 import 'package:flutter/material.dart';
@@ -84,6 +86,7 @@ class _MainNavigationState extends State<MainNavigation> {
         }
       },
       child: Scaffold(
+        extendBody: true,
         body: Stack(
           children: List.generate(_roots.length, (i) {
             return Offstage(
@@ -141,14 +144,18 @@ class _CustomBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final selectedColor = theme.colorScheme.primary;
-    final unselectedColor = theme.unselectedWidgetColor;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    const selectedColor = AppColors.tekhelet;
+    const unselectedColor = AppColors.inkSecondary;
 
-    return Material(
-      elevation: 8,
-      color: theme.colorScheme.surface,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.navBarBackground,
+            border: Border(top: BorderSide(color: AppColors.hairline, width: 0.5)),
+          ),
       child: SizedBox(
         height: kBottomNavigationBarHeight + bottomPadding,
         child: Padding(
@@ -173,7 +180,7 @@ class _CustomBottomNav extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         item.label,
-                        style: theme.textTheme.labelSmall?.copyWith(color: color),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: color),
                       ),
                     ],
                   ),
@@ -181,6 +188,8 @@ class _CustomBottomNav extends StatelessWidget {
               );
             }),
           ),
+        ),
+      ),
         ),
       ),
     );

@@ -1,25 +1,22 @@
 import 'package:almi3/core/app_colors.dart';
-import 'package:almi3/view/widgets/bookmark_ribbon.dart';
+import 'package:almi3/core/root_summary_resolver.dart';
+import 'package:almi3/model/dto/root_card_stats.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class RootCard extends StatefulWidget {
   final String hebrewText;
-  final int adjCount;
-  final int verbCount;
-  final int nounCount;
   final bool isBookmarked;
+  final RootCardStats? stats;
   final VoidCallback? onTap;
   final VoidCallback? onBookmarkToggle;
 
   const RootCard({
     super.key,
     required this.hebrewText,
-    this.adjCount = 0,
-    this.verbCount = 0,
-    this.nounCount = 0,
     this.isBookmarked = false,
+    this.stats,
     this.onTap,
     this.onBookmarkToggle,
   });
@@ -31,8 +28,6 @@ class RootCard extends StatefulWidget {
 class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
   late final Animation<double> _scale;
-
-  static const _bookmarkHeight = 37.0;
 
   @override
   void initState() {
@@ -55,6 +50,9 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final summary = RootSummaryResolver.resolve(widget.stats);
+    final metaLeft = widget.isBookmarked ? 22.0 : 18.0;
+
     return GestureDetector(
       onTap: widget.onTap,
       onLongPress: () {
@@ -65,68 +63,130 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
       child: ScaleTransition(
         scale: _scale,
         child: Container(
-          height: 100,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          height: 96,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5.5),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.cardBorder),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.rootCard, AppColors.rootCardGradient],
-            ),
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
             boxShadow: const [
-              BoxShadow(color: AppColors.cardShadow, blurRadius: 8, spreadRadius: 1, offset: Offset(0, 3)),
+              BoxShadow(color: AppColors.cardShadowSoft, blurRadius: 3, offset: Offset(0, 1)),
+              BoxShadow(color: AppColors.hairline, blurRadius: 0, spreadRadius: 0.5),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             child: Stack(
               children: [
-                Positioned.fill(
+                // TODO(parallax): wrap ghost in Transform.translate and feed offset from:
+                //   1. scroll-driven: card position in viewport via ScrollController → ±26px horizontal
+                //   2. gyroscope-driven: sensors_plus stream → additive Offset, physical device only
+                //   3. tap-pulse: onTapDown nudge in tap direction via AnimationController + Tween<Offset>
+                // ghost watermark
+                Positioned(
+                  right: -30,
+                  top: 0,
                   bottom: 5,
-                  child: Center(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Opacity(
+                      opacity: 0.045,
+                      child: Text(
+                        widget.hebrewText,
+                        textDirection: TextDirection.rtl,
+                        style: GoogleFonts.frankRuhlLibre(
+                          fontSize: 150,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.ink,
+                          height: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // crisp root glyph
+                Positioned(
+                  right: 25,
+                  top: 0,
+                  bottom: 5,
+                  child: Align(
+                    alignment: const Alignment(0, -0.1),
                     child: Text(
                       widget.hebrewText,
-                      textAlign: TextAlign.center,
                       textDirection: TextDirection.rtl,
                       style: GoogleFonts.notoSansHebrew(
-                        fontSize: 66,
+                        fontSize: 54,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.rootCardText,
+                        color: AppColors.ink,
                         height: 1.0,
                       ),
                     ),
                   ),
                 ),
+
+                // meta block (left)
+                Positioned(
+                  left: metaLeft,
+                  top: 0,
+                  bottom: 5,
+                  right: 80,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (summary.pillText != null) ...[
+                          _ReviewPill(summary.pillText!),
+                          const SizedBox(height: 7),
+                        ],
+                        Text(
+                          summary.verdict,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink,
+                            height: 1.15,
+                          ),
+                        ),
+                        if (summary.info.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            summary.info,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.inkSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+                // saved spine slab
+                if (widget.isBookmarked)
+                  const Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 5,
+                    child: SizedBox(
+                      width: 7,
+                      child: ColoredBox(color: AppColors.tekhelet),
+                    ),
+                  ),
+
+                // composite progress bar
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: _ProgressBar(
-                    adjCount: widget.adjCount,
-                    verbCount: widget.verbCount,
-                    nounCount: widget.nounCount,
-                  ),
-                ),
-                Positioned(
-                  right: 16,
-                  top: 0,
-                  bottom: 5,
-                  child: Center(
-                    child: _BadgeGroup(
-                      adjCount: widget.adjCount,
-                      verbCount: widget.verbCount,
-                      nounCount: widget.nounCount,
-                    ),
-                  ),
-                ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  top: widget.isBookmarked ? 0 : -_bookmarkHeight,
-                  left: 25,
-                  child: const BookmarkRibbon(),
+                  child: _ProgressBar(stats: widget.stats),
                 ),
               ],
             ),
@@ -137,82 +197,74 @@ class _RootCardState extends State<RootCard> with SingleTickerProviderStateMixin
   }
 }
 
-class _BadgeGroup extends StatelessWidget {
-  final int adjCount;
-  final int verbCount;
-  final int nounCount;
+class _ReviewPill extends StatelessWidget {
+  final String text;
 
-  const _BadgeGroup({required this.adjCount, required this.verbCount, required this.nounCount});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _Badge(count: adjCount, color: AppColors.adjectiveMain),
-        const SizedBox(width: 2),
-        _Badge(count: verbCount, color: AppColors.verbMain),
-        const SizedBox(width: 2),
-        _Badge(count: nounCount, color: AppColors.nounMain),
-      ],
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final int count;
-  final Color color;
-
-  const _Badge({required this.count, required this.color});
+  const _ReviewPill(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 16,
-      height: 16,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      alignment: Alignment.center,
-      child: Text(
-        '$count',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          height: 1.0,
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.pillBackground,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: AppColors.pillDot,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.pillText,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _ProgressBar extends StatelessWidget {
-  final int adjCount;
-  final int verbCount;
-  final int nounCount;
+  final RootCardStats? stats;
 
-  const _ProgressBar({required this.adjCount, required this.verbCount, required this.nounCount});
+  const _ProgressBar({this.stats});
 
   @override
   Widget build(BuildContext context) {
-    final total = adjCount + verbCount + nounCount;
+    final s = stats;
+    final total = s?.totalWords ?? 0;
 
     return SizedBox(
       height: 5,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          if (total == 0) {
-            return Container(color: AppColors.progressBackground);
+          if (s == null || total == 0) {
+            return Container(color: AppColors.progressTrack);
           }
-          final adjWidth = width * adjCount / total;
-          final verbWidth = width * verbCount / total;
-          final nounWidth = width * nounCount / total;
+
+          final width = constraints.maxWidth;
+          final verbW = width * s.verbs.learned / total;
+          final nounW = width * s.nouns.learned / total;
+          final adjW = width * s.adjs.learned / total;
+
           return Row(
             children: [
-              if (adjWidth > 0) Container(width: adjWidth, color: AppColors.adjectiveMain),
-              if (verbWidth > 0) Container(width: verbWidth, color: AppColors.verbMain),
-              if (nounWidth > 0) Container(width: nounWidth, color: AppColors.nounMain),
-              Expanded(child: Container(color: AppColors.progressBackground)),
+              if (verbW > 0) Container(width: verbW, color: AppColors.verbMain),
+              if (nounW > 0) Container(width: nounW, color: AppColors.nounMain),
+              if (adjW > 0) Container(width: adjW, color: AppColors.adjectiveMain),
+              Expanded(child: Container(color: AppColors.progressTrack)),
             ],
           );
         },
