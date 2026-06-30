@@ -58,6 +58,14 @@ class RootRepository extends GenericRepository<RootDto, RootTableData, RootTable
         .insert(RootTableCompanion(id: Value(dto.id), value: Value(dto.value), version: Value(dto.version)));
   }
 
+  // SELECT COUNT(*) FROM root_table
+  Future<int> getTotalCount() async {
+    final countExp = database.rootTable.id.count();
+    final query = database.selectOnly(database.rootTable)..addColumns([countExp]);
+    final row = await query.getSingle();
+    return row.read(countExp) ?? 0;
+  }
+
   Future<List<RootDto>> getRootsPaged(int page, int size) async {
     try {
       logger.d('getRootsPaged: page=$page, size=$size');

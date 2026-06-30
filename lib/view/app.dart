@@ -32,6 +32,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
+  BrowseMode _browseMode = BrowseMode.allRoots;
 
   // One navigator key per tab so each tab keeps its own back-stack.
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
@@ -65,11 +66,20 @@ class _MainNavigationState extends State<MainNavigation> {
     showBrowsePopupMenu(
       context: context,
       anchorKey: _browseNavKey,
-      onSelect: (page) {
-        setState(() => _selectedIndex = 0);
-        _navigatorKeys[0].currentState?.push(
-          MaterialPageRoute(builder: (_) => page),
-        );
+      currentMode: _browseMode,
+      onSelect: (page, mode) {
+        setState(() {
+          _selectedIndex = 0;
+          _browseMode = mode;
+        });
+        if (page == null) {
+          // All roots — pop back to root list
+          _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
+        } else {
+          _navigatorKeys[0].currentState?.push(
+            MaterialPageRoute(builder: (_) => page),
+          );
+        }
       },
     );
   }
@@ -107,6 +117,7 @@ class _MainNavigationState extends State<MainNavigation> {
             // Tapping Browse always resets it to RootListPage.
             if (idx == 0) {
               _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
+              setState(() => _browseMode = BrowseMode.allRoots);
             }
             setState(() => _selectedIndex = idx);
           },
