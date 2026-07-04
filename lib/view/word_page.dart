@@ -1,3 +1,4 @@
+import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/view/verb_page.dart';
 import 'package:almi3/view/widgets/niqqud_btn.dart';
@@ -66,7 +67,7 @@ class WordPage extends ConsumerWidget {
                   ref.read(wordPageProvider(root.id).notifier).toggleBookmark(w.id),
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                adaptivePageRoute(
                   builder: (_) => VerbPage(verbId: w.id, rootValue: root.value),
                 ),
               ),

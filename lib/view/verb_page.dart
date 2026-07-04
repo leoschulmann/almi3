@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
@@ -78,7 +79,7 @@ class VerbPage extends ConsumerWidget {
   void _onChipTap(BuildContext context, VerbDetailDto verb, VerbFormDisplayDto form) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      adaptivePageRoute(
         builder: (_) => ExamplePage(
           verbId: verbId,
           verbValue: verb.value,

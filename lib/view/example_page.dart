@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/model/dto/example_display_dto.dart';
 import 'package:almi3/view/widgets/example_form_section.dart';
@@ -11,10 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-const _noExamplesSnackBar = SnackBar(
-  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-  content: Text('No examples for this form yet', textAlign: TextAlign.center),
-);
+const _noExamplesMessage = 'No examples for this form yet';
 
 class ExamplePage extends ConsumerStatefulWidget {
   final int verbId;
@@ -31,18 +29,9 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
   final _scrollController = ScrollController();
   final _formKeys = <int, GlobalKey>{};
   bool _focusHandled = false;
-  late ScaffoldMessengerState _messenger;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _messenger = ScaffoldMessenger.of(context);
-  }
-
   @override
   void dispose() {
     _scrollController.dispose();
-    _messenger.hideCurrentSnackBar();
     super.dispose();
   }
 
@@ -58,7 +47,7 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
       if (!next.groups.any((g) => g.formId == fid)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(_noExamplesSnackBar);
+          showAdaptiveToast(context, _noExamplesMessage);
         });
         return;
       }
@@ -76,7 +65,7 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         if (!state.groups.any((g) => g.formId == fid)) {
-          ScaffoldMessenger.of(context).showSnackBar(_noExamplesSnackBar);
+          showAdaptiveToast(context, _noExamplesMessage);
         } else {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) _scrollToForm(fid);

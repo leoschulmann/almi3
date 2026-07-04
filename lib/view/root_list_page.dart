@@ -1,4 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/view/settings_page.dart';
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/dto/root_card_stats.dart';
 import 'package:almi3/view/widgets/root_card.dart';
@@ -125,17 +127,17 @@ class _RootListPageState extends ConsumerState<RootListPage> {
         ),
       ),
       actions: [
-        IconButton(
-          onPressed: () {/* TODO: toggle niqqud */},
+        AdaptiveIconButton(
           tooltip: 'Toggle niqqud',
+          onPressed: () {/* TODO: toggle niqqud */},
           icon: const Text(
             'אָ',
             style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: AppColors.tekhelet),
           ),
         ),
-        IconButton(
-          onPressed: () {/* TODO: open settings */},
+        AdaptiveIconButton(
           tooltip: 'Settings',
+          onPressed: () => showSettingsSheet(context),
           icon: const Icon(Icons.settings_outlined, size: 23, color: AppColors.tekhelet),
         ),
       ],
@@ -216,7 +218,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
                 isBookmarked: state.isBookmarked(root.id),
                 stats: _mockStats[index % _mockStats.length],
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => WordPage(root: root)),
+                  adaptivePageRoute(builder: (_) => WordPage(root: root)),
                 ),
                 onBookmarkToggle: () =>
                     ref.read(rootListPageProvider.notifier).toggleBookmark(root.id),

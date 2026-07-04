@@ -1,5 +1,9 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/enums.dart';
+import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/view/root_list_page.dart';
 import 'package:almi3/view/widgets/browse_popup_menu.dart';
 import 'package:flutter/material.dart';
@@ -8,17 +12,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'learn_page.dart';
 import 'quiz_page.dart';
-import 'sync_page.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appTheme = ref.watch(settingsProvider.select((s) => s.theme));
+    final themeMode = switch (appTheme) {
+      AppTheme.light => ThemeMode.light,
+      AppTheme.dark  => ThemeMode.dark,
+      AppTheme.auto  => ThemeMode.system,
+    };
+
     return MaterialApp(
       title: 'almi yaha',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      home: const MainNavigation(),
+      themeMode: themeMode,
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.tekhelet)),
+      darkTheme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.tekhelet, brightness: Brightness.dark)),
+      home: CupertinoTheme(
+        data: const CupertinoThemeData(primaryColor: AppColors.tekhelet),
+        child: const MainNavigation(),
+      ),
     );
   }
 }
@@ -39,7 +54,6 @@ class _MainNavigationState extends State<MainNavigation> {
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
   ];
 
   // Used to position the Browse popup above the correct nav item.
@@ -49,7 +63,6 @@ class _MainNavigationState extends State<MainNavigation> {
     RootListPage(),
     LearnPage(),
     QuizPage(),
-    SyncPage(),
   ];
 
   Future<bool> _onWillPop() async {
@@ -77,7 +90,7 @@ class _MainNavigationState extends State<MainNavigation> {
           _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
         } else {
           _navigatorKeys[0].currentState?.push(
-            MaterialPageRoute(builder: (_) => page),
+            adaptivePageRoute(builder: (_) => page),
           );
         }
       },
@@ -103,7 +116,7 @@ class _MainNavigationState extends State<MainNavigation> {
               offstage: _selectedIndex != i,
               child: Navigator(
                 key: _navigatorKeys[i],
-                onGenerateRoute: (_) => MaterialPageRoute(
+                onGenerateRoute: (_) => adaptivePageRoute(
                   builder: (_) => _roots[i],
                 ),
               ),
@@ -150,7 +163,6 @@ class _CustomBottomNav extends StatelessWidget {
     (icon: Icons.book, label: 'Browse'),
     (icon: Icons.school, label: 'Learn'),
     (icon: Icons.quiz, label: 'Quiz'),
-    (icon: Icons.sync, label: 'Sync'),
   ];
 
   @override

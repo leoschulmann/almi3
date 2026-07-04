@@ -63,3 +63,9 @@ GrammaticalPerson personFromJson(int i) => GrammaticalPerson.values[i];
 Plurality pluralityFromJson(int i) => Plurality.values[i];
 
 GrammaticalGender genderFromJson(int i) => GrammaticalGender.values[i];
+
+enum AppLanguage { en, ru }
+
+enum AppTheme { light, dark, auto }
+
+enum ReviewIntensity { relaxed, normal, intense }
