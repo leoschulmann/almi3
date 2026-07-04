@@ -4,8 +4,8 @@ import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/example_page.dart';
+import 'package:almi3/view/widgets/almi_app_bar.dart';
 import 'package:almi3/view/widgets/binyan_named_icon.dart';
-import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
 import 'package:almi3/view/widgets/word_title.dart';
 import 'package:almi3/viewmodel/state/verb_page_state.dart';
@@ -26,13 +26,8 @@ class VerbPage extends ConsumerWidget {
     final state = ref.watch(verbPageProvider(verbId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'verb - $rootValue',
-          style: const TextStyle(fontSize: 16),
-        ),
-        centerTitle: true,
-        actions: const [NiqqudBtn()],
+      appBar: AlmiAppBar(
+        title: Text('verb - $rootValue', style: const TextStyle(fontSize: 16)),
       ),
       body: _buildBody(context, ref, state),
     );

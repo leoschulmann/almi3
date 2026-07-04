@@ -1,7 +1,8 @@
+import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/view/verb_page.dart';
-import 'package:almi3/view/widgets/niqqud_btn.dart';
+import 'package:almi3/view/widgets/almi_app_bar.dart';
 import 'package:almi3/view/widgets/word_chip.dart';
 import 'package:almi3/viewmodel/state/word_page_state.dart';
 import 'package:almi3/viewmodel/word_page_viewmodel.dart';
@@ -20,14 +21,12 @@ class WordPage extends ConsumerWidget {
     final WordPageState state = ref.watch(wordPageProvider(root.id));
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: AlmiAppBar(
         title: Text(
           root.value,
           textDirection: TextDirection.rtl,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 22, color: AppColors.ink),
         ),
-        centerTitle: true,
-        actions: const [NiqqudBtn()],
       ),
       body: _buildBody(context, ref, state),
     );

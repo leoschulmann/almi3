@@ -3,7 +3,7 @@ import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/model/dto/example_display_dto.dart';
 import 'package:almi3/view/widgets/example_form_section.dart';
-import 'package:almi3/view/widgets/niqqud_btn.dart';
+import 'package:almi3/view/widgets/almi_app_bar.dart';
 import 'package:almi3/view/widgets/tense_section_header.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
 import 'package:almi3/viewmodel/example_page_viewmodel.dart';
@@ -77,10 +77,8 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
     final total = state.groups.fold(0, (sum, g) => sum + g.examples.length);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: AlmiAppBar(
         title: Text('examples for ($total) ${widget.verbValue}', style: const TextStyle(fontSize: 16)),
-        centerTitle: true,
-        actions: const [NiqqudBtn()],
       ),
       body: _buildBody(state),
     );

@@ -13,6 +13,18 @@ class AppColors {
   static const Color nounComplement = Color(0xFFC8F7C5);
   static const Color nounGradient = Color(0xFFB439ED);
 
+  static const Color verbMainDark = Color(0xFFC7005A);
+  static const Color verbComplementDark = Color(0xFFF1F227);
+  static const Color verbGradientDark = Color(0xFFB81E8A);
+
+  static const Color nounMainDark = Color(0xFF6A2FBE);
+  static const Color nounComplementDark = Color(0xFFC8F7C5);
+  static const Color nounGradientDark = Color(0xFF8A3BC4);
+
+  static const Color adjectiveMainDark = Color(0xFFC89100);
+  static const Color adjectiveComplementDark = Color(0xFF3A1000);
+  static const Color adjectiveGradientDark = Color(0xFFD6B400);
+
   // Tekhelet — brand accent (saved/bookmarked state, nav icons)
   static const Color tekhelet = Color(0xFF1E5BB8);       // light mode
   static const Color tekheletDark = Color(0xFF5B9BFF);   // dark mode
