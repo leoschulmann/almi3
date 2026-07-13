@@ -9,8 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:almi3/model/db/tables/binyan_table.dart';
 import 'package:almi3/model/db/tables/gizrah_table.dart';
 import 'package:almi3/model/db/tables/prep_table.dart';
-import 'package:almi3/core/enums.dart';
-import 'package:almi3/model/db/tables/bookmark_table.dart';
 import 'package:almi3/model/db/tables/root_table.dart';
 import 'package:almi3/model/db/tables/verb_gizrah_table.dart';
 import 'package:almi3/model/db/tables/verb_prep_table.dart';
@@ -22,17 +20,19 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-part 'db.g.dart';
+part 'vocab_db.g.dart';
 
+// Content database: bundled dictionary/reference data only. User-owned data
+// (bookmarks, progress, review history) lives in UserDatabase (user_db.dart).
 @DriftDatabase(
   tables: [
-    RootTable, BookmarkTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
+    RootTable, BinyanTable, VerbTable, GizrahTable, VerbGizrahTable, PrepositionTable, VerbPrepTable,
     VerbTranslationTable, VerbFormTable, VerbFormTransliterationTable,
     VerbFormExampleTable, VerbFormExampleTranslationTable,
   ],
 )
-class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+class VocabularyDatabase extends _$VocabularyDatabase {
+  VocabularyDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;

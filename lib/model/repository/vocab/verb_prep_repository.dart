@@ -1,11 +1,11 @@
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/prep_dto.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
 class VerbPrepRepository {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   VerbPrepRepository(this.database);
 

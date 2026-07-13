@@ -1,10 +1,10 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/verb_form_example_simple_dto.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
 class VerbFormExampleT9nRepository {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   VerbFormExampleT9nRepository(this.database);
 

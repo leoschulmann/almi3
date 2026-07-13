@@ -1,21 +1,33 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/db_providers.dart';
+import 'package:almi3/model/db/user_db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/view/app.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('App', () {
-    late AppDatabase testDb;
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    setUp(() {
-      testDb = AppDatabase(NativeDatabase.memory());
+  group('App', () {
+    late VocabularyDatabase testDb;
+    late UserDatabase testUserDb;
+    late SharedPreferences prefs;
+
+    setUp(() async {
+      testDb = VocabularyDatabase(NativeDatabase.memory());
+      testUserDb = UserDatabase(NativeDatabase.memory());
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
     });
 
     tearDown(() async {
       await testDb.close();
+      await testUserDb.close();
     });
 
     testWidgets('loads and shows bottom navigation', (tester) async {
@@ -23,6 +35,8 @@ void main() {
         ProviderScope(
           overrides: [
             appDatabaseProvider.overrideWithValue(testDb),
+            userDbProvider.overrideWithValue(testUserDb),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: const App(),
         ),
@@ -44,6 +58,8 @@ void main() {
         ProviderScope(
           overrides: [
             appDatabaseProvider.overrideWithValue(testDb),
+            userDbProvider.overrideWithValue(testUserDb),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: const App(),
         ),
@@ -76,6 +92,8 @@ void main() {
         ProviderScope(
           overrides: [
             appDatabaseProvider.overrideWithValue(testDb),
+            userDbProvider.overrideWithValue(testUserDb),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: const App(),
         ),

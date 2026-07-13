@@ -1,13 +1,14 @@
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
 import 'generic_repo.dart';
 
+
 class RootRepository extends GenericRepository<RootDto, RootTableData, RootTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   RootRepository(this.database);
 

@@ -1,11 +1,12 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/verb_form_simple_dto.dart';
-import 'package:almi3/model/repository/generic_repo.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
+import 'generic_repo.dart';
+
 class VerbFormRepository extends GenericRepository<VerbFormSimpleDto, VerbFormTableData, VerbFormTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   VerbFormRepository(this.database);
 

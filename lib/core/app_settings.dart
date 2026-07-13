@@ -10,6 +10,7 @@ class AppSettings {
   final bool showTransliteration;
   final bool disableRootParallax;
   final ReviewIntensity reviewIntensity;
+  final int dayBoundaryHour;
   final bool dailyReminder;
   final TimeOfDay reminderTime;
   final bool autoplayAudio;
@@ -24,6 +25,7 @@ class AppSettings {
     required this.showTransliteration,
     required this.disableRootParallax,
     required this.reviewIntensity,
+    required this.dayBoundaryHour,
     required this.dailyReminder,
     required this.reminderTime,
     required this.autoplayAudio,
@@ -39,6 +41,7 @@ class AppSettings {
     bool? showTransliteration,
     bool? disableRootParallax,
     ReviewIntensity? reviewIntensity,
+    int? dayBoundaryHour,
     bool? dailyReminder,
     TimeOfDay? reminderTime,
     bool? autoplayAudio,
@@ -54,6 +57,7 @@ class AppSettings {
       showTransliteration: showTransliteration ?? this.showTransliteration,
       disableRootParallax: disableRootParallax ?? this.disableRootParallax,
       reviewIntensity: reviewIntensity ?? this.reviewIntensity,
+      dayBoundaryHour: dayBoundaryHour ?? this.dayBoundaryHour,
       dailyReminder: dailyReminder ?? this.dailyReminder,
       reminderTime: reminderTime ?? this.reminderTime,
       autoplayAudio: autoplayAudio ?? this.autoplayAudio,
@@ -73,6 +77,7 @@ class AppSettings {
       showTransliteration: true,
       disableRootParallax: false,
       reviewIntensity: ReviewIntensity.normal,
+      dayBoundaryHour: 4,
       dailyReminder: true,
       reminderTime: const TimeOfDay(hour: 9, minute: 0),
       autoplayAudio: true,

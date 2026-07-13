@@ -1,13 +1,13 @@
-import 'package:almi3/model/db/db.dart';
-import 'package:almi3/model/repository/generic_repo.dart';
+import 'package:almi3/model/db/vocab_db.dart';
+import 'package:almi3/model/dto/verb_t9n_dto.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
-import '../dto/verb_t9n_dto.dart';
+import 'generic_repo.dart';
 
 class VerbTranslationRepository
     extends GenericRepository<VerbTranslationDto, VerbTranslationTableData, VerbTranslationTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   VerbTranslationRepository(this.database);
 

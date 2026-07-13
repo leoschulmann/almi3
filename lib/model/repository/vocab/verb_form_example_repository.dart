@@ -1,23 +1,24 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/verb_form_example_simple_dto.dart';
-import 'package:almi3/model/repository/generic_repo.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
+import 'generic_repo.dart';
+
 class VerbFormExampleRepository
     extends GenericRepository<VerbFormExampleSimpleDto, VerbFormExampleTableData, VerbFormExampleTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   VerbFormExampleRepository(this.database);
 
   @override
   VerbFormExampleTableCompanion createCompanion(VerbFormExampleSimpleDto dto) => VerbFormExampleTableCompanion(
-        id: Value(dto.id),
-        verbFormId: Value(dto.verbFormId),
-        value: Value(dto.value),
-        file: Value(dto.file),
-        version: Value(dto.version),
-      );
+    id: Value(dto.id),
+    verbFormId: Value(dto.verbFormId),
+    value: Value(dto.value),
+    file: Value(dto.file),
+    version: Value(dto.version),
+  );
 
   @override
   Future<void> executeBatchInsert(List<VerbFormExampleTableCompanion> companions) async =>

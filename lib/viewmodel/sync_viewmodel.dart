@@ -1,26 +1,26 @@
 import 'package:almi3/core/config.dart';
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/binyan_dto.dart';
 import 'package:almi3/model/dto/gizrah_dto.dart';
 import 'package:almi3/model/dto/prep_dto.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
 import 'package:almi3/model/dto/verb_t9n_dto.dart';
-import 'package:almi3/model/repository/binyan_repository.dart';
-import 'package:almi3/model/repository/gizrah_repo.dart';
-import 'package:almi3/model/repository/prep_repo.dart';
-import 'package:almi3/model/repository/root_repository.dart';
-import 'package:almi3/model/repository/verb_gizrah_repository.dart';
-import 'package:almi3/model/repository/verb_prep_repository.dart';
-import 'package:almi3/model/repository/verb_repository.dart';
-import 'package:almi3/model/repository/verb_t9n_repository.dart';
+import 'package:almi3/model/repository/vocab/binyan_repository.dart';
+import 'package:almi3/model/repository/vocab/gizrah_repo.dart';
+import 'package:almi3/model/repository/vocab/prep_repo.dart';
+import 'package:almi3/model/repository/vocab/root_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_gizrah_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_prep_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_t9n_repository.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:almi3/viewmodel/state/sync_page_state.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final Provider<AppDatabase> appDatabaseProvider = Provider((ref) => AppDatabase());
+final Provider<VocabularyDatabase> appDatabaseProvider = Provider((ref) => VocabularyDatabase());
 
 final syncCounterProvider = NotifierProvider<_SyncCounter, int>(_SyncCounter.new);
 

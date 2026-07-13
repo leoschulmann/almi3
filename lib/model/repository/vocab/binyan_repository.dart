@@ -1,12 +1,13 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/binyan_dto.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
 import 'generic_repo.dart';
 
+
 class BinyanRepository extends GenericRepository<BinyanDto, BinyanTableData, BinyanTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   BinyanRepository({required this.database});
 

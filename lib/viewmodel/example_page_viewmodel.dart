@@ -1,6 +1,6 @@
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/dto/example_display_dto.dart';
-import 'package:almi3/model/repository/verb_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_repository.dart';
 import 'package:almi3/viewmodel/state/example_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -21,6 +21,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kShowTranslit = 'settings.showTransliteration';
   static const _kDisableParallax = 'settings.disableRootParallax';
   static const _kReviewIntensity = 'settings.reviewIntensity';
+  static const _kDayBoundaryHour = 'settings.dayBoundaryHour';
   static const _kDailyReminder = 'settings.dailyReminder';
   static const _kReminderHour = 'settings.reminderHour';
   static const _kReminderMinute = 'settings.reminderMinute';
@@ -63,6 +64,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       showTransliteration: prefs.getBool(_kShowTranslit) ?? defaults.showTransliteration,
       disableRootParallax: prefs.getBool(_kDisableParallax) ?? defaults.disableRootParallax,
       reviewIntensity: intensity,
+      dayBoundaryHour: prefs.getInt(_kDayBoundaryHour) ?? defaults.dayBoundaryHour,
       dailyReminder: prefs.getBool(_kDailyReminder) ?? defaults.dailyReminder,
       reminderTime: TimeOfDay(
         hour: prefs.getInt(_kReminderHour) ?? defaults.reminderTime.hour,
@@ -83,6 +85,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     prefs.setBool(_kShowTranslit, s.showTransliteration);
     prefs.setBool(_kDisableParallax, s.disableRootParallax);
     prefs.setString(_kReviewIntensity, s.reviewIntensity.name);
+    prefs.setInt(_kDayBoundaryHour, s.dayBoundaryHour);
     prefs.setBool(_kDailyReminder, s.dailyReminder);
     prefs.setInt(_kReminderHour, s.reminderTime.hour);
     prefs.setInt(_kReminderMinute, s.reminderTime.minute);
@@ -106,6 +109,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setShowTransliteration(bool v) => _update((s) => s.copyWith(showTransliteration: v));
   void setDisableRootParallax(bool v) => _update((s) => s.copyWith(disableRootParallax: v));
   void setReviewIntensity(ReviewIntensity v) => _update((s) => s.copyWith(reviewIntensity: v));
+  void setDayBoundaryHour(int v) => _update((s) => s.copyWith(dayBoundaryHour: v));
   void setDailyReminder(bool v) => _update((s) => s.copyWith(dailyReminder: v));
   void setReminderTime(TimeOfDay v) => _update((s) => s.copyWith(reminderTime: v));
   void setAutoplayAudio(bool v) => _update((s) => s.copyWith(autoplayAudio: v));

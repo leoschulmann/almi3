@@ -1,7 +1,7 @@
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/repository/bookmark_repository.dart';
-import 'package:almi3/model/repository/verb_repository.dart';
+import 'package:almi3/model/repository/user/bookmark_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_repository.dart';
 import 'package:almi3/viewmodel/state/verb_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

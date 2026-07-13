@@ -1,11 +1,12 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/prep_dto.dart';
-import 'package:almi3/model/repository/generic_repo.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
+import 'generic_repo.dart';
+
 class PrepositionRepository extends GenericRepository<PrepositionDto, PrepositionTableData, PrepositionTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   PrepositionRepository({required this.database});
 

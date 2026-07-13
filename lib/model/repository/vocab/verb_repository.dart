@@ -1,15 +1,16 @@
 import 'package:almi3/core/enums.dart';
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/dto/example_display_dto.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/dto/verb_dto.dart';
 import 'package:almi3/model/dto/verb_word_dto.dart';
-import 'package:almi3/model/repository/generic_repo.dart';
 import 'package:almi3/model/sync_result.dart';
 import 'package:drift/drift.dart';
 
+import 'generic_repo.dart';
+
 class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbTableCompanion> {
-  final AppDatabase database;
+  final VocabularyDatabase database;
 
   VerbRepository(this.database);
 
