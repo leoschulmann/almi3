@@ -1,4 +1,4 @@
-import 'package:almi3/model/db/tables/prep_table.dart';
+import 'package:almi3/model/db/tables/vocab/prep_table.dart';
 import 'package:drift/drift.dart';
 
 import 'verb_table.dart';

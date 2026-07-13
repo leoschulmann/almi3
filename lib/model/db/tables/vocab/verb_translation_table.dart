@@ -1,4 +1,4 @@
-import 'package:almi3/model/db/tables/verb_table.dart';
+import 'package:almi3/model/db/tables/vocab/verb_table.dart';
 import 'package:drift/drift.dart';
 
 @TableIndex(name: "verb_fk_idx", columns: {#verbId})

@@ -1,4 +1,4 @@
-import 'package:almi3/model/db/tables/verb_form_example_table.dart';
+import 'package:almi3/model/db/tables/vocab/verb_form_example_table.dart';
 import 'package:drift/drift.dart';
 
 @TableIndex(name: "vfext9n__ex__idx", columns: {#exampleId})
