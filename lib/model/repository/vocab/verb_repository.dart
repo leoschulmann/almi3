@@ -203,6 +203,23 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     return counts;
   }
 
+  // SELECT * FROM verb_table WHERE id NOT IN (?)
+  // ORDER BY frequency_rank IS NULL, frequency_rank ASC LIMIT ?
+  // TODO(spec §9.2): frequency_rank is nullable until ranking data exists for
+  // all verbs; verbs with a null rank sort after ranked ones for now.
+  Future<List<VerbTableData>> getNewCandidatesOrderedByFrequency(List<int> excludeIds, int limit) async {
+    final query = database.select(database.verbTable);
+    if (excludeIds.isNotEmpty) {
+      query.where((t) => t.id.isNotIn(excludeIds));
+    }
+    query
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.frequencyRank, mode: OrderingMode.asc, nulls: NullsOrder.last),
+      ])
+      ..limit(limit);
+    return query.get();
+  }
+
   Future<List<VerbWordDto>> getVerbsByRootId(int rootId, String lang) async {
     final query = database.select(database.verbTable).join([
       leftOuterJoin(

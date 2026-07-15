@@ -22,6 +22,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kDisableParallax = 'settings.disableRootParallax';
   static const _kReviewIntensity = 'settings.reviewIntensity';
   static const _kDayBoundaryHour = 'settings.dayBoundaryHour';
+  static const _kNewCardsPerDay = 'settings.newCardsPerDay';
+  static const _kActiveDeckIds = 'settings.activeDeckIds';
   static const _kDailyReminder = 'settings.dailyReminder';
   static const _kReminderHour = 'settings.reminderHour';
   static const _kReminderMinute = 'settings.reminderMinute';
@@ -65,6 +67,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
       disableRootParallax: prefs.getBool(_kDisableParallax) ?? defaults.disableRootParallax,
       reviewIntensity: intensity,
       dayBoundaryHour: prefs.getInt(_kDayBoundaryHour) ?? defaults.dayBoundaryHour,
+      newCardsPerDay: prefs.getInt(_kNewCardsPerDay) ?? defaults.newCardsPerDay,
+      activeDeckIds: prefs.getStringList(_kActiveDeckIds)?.map(int.parse).toList() ?? defaults.activeDeckIds,
       dailyReminder: prefs.getBool(_kDailyReminder) ?? defaults.dailyReminder,
       reminderTime: TimeOfDay(
         hour: prefs.getInt(_kReminderHour) ?? defaults.reminderTime.hour,
@@ -86,6 +90,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
     prefs.setBool(_kDisableParallax, s.disableRootParallax);
     prefs.setString(_kReviewIntensity, s.reviewIntensity.name);
     prefs.setInt(_kDayBoundaryHour, s.dayBoundaryHour);
+    prefs.setInt(_kNewCardsPerDay, s.newCardsPerDay);
+    prefs.setStringList(_kActiveDeckIds, s.activeDeckIds.map((id) => id.toString()).toList());
     prefs.setBool(_kDailyReminder, s.dailyReminder);
     prefs.setInt(_kReminderHour, s.reminderTime.hour);
     prefs.setInt(_kReminderMinute, s.reminderTime.minute);
@@ -110,6 +116,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setDisableRootParallax(bool v) => _update((s) => s.copyWith(disableRootParallax: v));
   void setReviewIntensity(ReviewIntensity v) => _update((s) => s.copyWith(reviewIntensity: v));
   void setDayBoundaryHour(int v) => _update((s) => s.copyWith(dayBoundaryHour: v));
+  void setNewCardsPerDay(int v) => _update((s) => s.copyWith(newCardsPerDay: v));
+  void setActiveDeckIds(List<int> v) => _update((s) => s.copyWith(activeDeckIds: v));
   void setDailyReminder(bool v) => _update((s) => s.copyWith(dailyReminder: v));
   void setReminderTime(TimeOfDay v) => _update((s) => s.copyWith(reminderTime: v));
   void setAutoplayAudio(bool v) => _update((s) => s.copyWith(autoplayAudio: v));

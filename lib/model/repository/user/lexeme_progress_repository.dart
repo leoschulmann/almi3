@@ -33,4 +33,23 @@ class LexemeProgressRepository {
       ),
     );
   }
+
+  // SELECT entity_id FROM lexeme_progress WHERE entity_type = ?
+  Future<List<int>> getStartedEntityIds(int entityType) async {
+    final rows = await (database.selectOnly(database.lexemeProgressTable)
+          ..addColumns([database.lexemeProgressTable.entityId])
+          ..where(database.lexemeProgressTable.entityType.equals(entityType)))
+        .get();
+    return rows.map((r) => r.read(database.lexemeProgressTable.entityId)!).toList();
+  }
+
+  // SELECT COUNT(*) FROM lexeme_progress WHERE first_seen_at >= ?
+  Future<int> countIntroducedSince(int unixSec) async {
+    final countExp = database.lexemeProgressTable.id.count();
+    final query = database.selectOnly(database.lexemeProgressTable)
+      ..addColumns([countExp])
+      ..where(database.lexemeProgressTable.firstSeenAt.isBiggerOrEqualValue(unixSec));
+    final row = await query.getSingle();
+    return row.read(countExp) ?? 0;
+  }
 }
