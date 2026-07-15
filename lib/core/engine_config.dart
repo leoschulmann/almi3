@@ -17,6 +17,28 @@ const List<double> defaultFsrsWeights = [
   0.2,
 ];
 
+// Grading time thresholds (§5.3). Calibratable — rough defaults, not tuned
+// on real data yet.
+
+/// typed_production: below this, a correct answer is graded Easy.
+const int typedProductionFastMs = 3000;
+
+/// typed_production: above this, a correct answer is graded Hard.
+const int typedProductionSlowMs = 10000;
+
+/// mc2_*/mc4_*: above this, a correct answer is graded Hard instead of Good.
+const int mcSlowMs = 6000;
+
+/// listening: below this, a correct answer is graded Easy.
+const int listeningFastMs = 4000;
+
+/// listening: above this, a correct answer is graded Hard.
+const int listeningSlowMs = 10000;
+
+/// Review-state recognition format mix: probability of picking `listening`
+/// over `mc4Recognition` (§5.2 "разнообразие и повторяемость").
+const double reviewListeningWeight = 0.5;
+
 // TODO phase 2+, not wired up yet: gate for whether practice sessions may
 // touch a card, based on retrievability (spec §6.3), ~0.95.
 // const double practiceGateRetrievabilityThreshold = 0.95;
