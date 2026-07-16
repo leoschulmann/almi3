@@ -1,5 +1,6 @@
 import 'package:almi3/core/clock.dart';
 import 'package:almi3/model/db/user_db.dart';
+import 'package:almi3/model/fsrs/answer_log_codes.dart';
 import 'package:almi3/model/fsrs/card_mapper.dart';
 import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/choose_format.dart';
@@ -14,9 +15,6 @@ import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
-
-/// answer_log.source (§4).
-const int answerSourceScheduled = 0;
 
 /// A due card_fsrs row joined with its lexical_card row. Only the lexical
 /// subtype is handled here — conjugation_card cards (§7) are a later step.

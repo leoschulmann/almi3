@@ -50,3 +50,24 @@ CardFsrsTableCompanion libraryCardToCardFsrsCompanion(
     createdAt: createdAt != null ? Value(createdAt) : const Value.absent(),
   );
 }
+
+/// Full-column companion that restores a card_fsrs row to an exact prior
+/// snapshot (every field explicit, including nulls). Distinct from
+/// [libraryCardToCardFsrsCompanion]: that one derives a row from a library
+/// [fsrs.Card] after a real review; this one is for undo (§10's "I know"
+/// rollback), which must restore the row byte-for-byte, not re-derive it.
+CardFsrsTableCompanion cardFsrsRowToFullCompanion(CardFsrsTableData row) {
+  return CardFsrsTableCompanion(
+    id: Value(row.id),
+    cardType: Value(row.cardType),
+    due: Value(row.due),
+    stability: Value(row.stability),
+    difficulty: Value(row.difficulty),
+    state: Value(row.state),
+    step: Value(row.step),
+    lastReview: Value(row.lastReview),
+    reps: Value(row.reps),
+    lapses: Value(row.lapses),
+    createdAt: Value(row.createdAt),
+  );
+}

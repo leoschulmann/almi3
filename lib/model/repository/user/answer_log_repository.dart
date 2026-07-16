@@ -24,4 +24,9 @@ class AnswerLogRepository {
           ..orderBy([(t) => OrderingTerm.asc(t.answeredAt)]))
         .get();
   }
+
+  // DELETE FROM answer_log WHERE id = ?
+  Future<void> deleteById(int id) {
+    return (database.delete(database.answerLogTable)..where((t) => t.id.equals(id))).go();
+  }
 }
