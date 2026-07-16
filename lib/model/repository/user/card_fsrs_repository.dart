@@ -24,9 +24,15 @@ class CardFsrsRepository {
         .getSingleOrNull();
   }
 
-  // SELECT * FROM card_fsrs WHERE due <= ?
-  Future<List<CardFsrsTableData>> getByDueBefore(int unixSec) {
-    return (database.select(database.cardFsrsTable)..where((t) => t.due.isSmallerOrEqualValue(unixSec))).get();
+  // SELECT * FROM card_fsrs WHERE due <= ? ORDER BY due ASC LIMIT ?
+  Future<List<CardFsrsTableData>> getByDueBefore(int unixSec, {int? limit}) {
+    final query = database.select(database.cardFsrsTable)
+      ..where((t) => t.due.isSmallerOrEqualValue(unixSec))
+      ..orderBy([(t) => OrderingTerm.asc(t.due)]);
+    if (limit != null) {
+      query.limit(limit);
+    }
+    return query.get();
   }
 
   // SELECT * FROM card_fsrs WHERE state = ?
