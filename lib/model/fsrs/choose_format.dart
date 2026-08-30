@@ -35,3 +35,20 @@ QuizType? chooseFormat({
   final rng = random ?? Random();
   return rng.nextDouble() < reviewListeningWeight ? QuizType.listening : QuizType.mc4Recognition;
 }
+
+/// Picks a quiz format for a conjugation-rule card (§5.2: "для
+/// conjugation_card -> только conj_produce / conj_identify"). §5.2 doesn't
+/// say which maturity gets which of the two — this mirrors the general
+/// maturity gradient used elsewhere: Learning -> conjIdentify (recognize
+/// the coordinates, easier), Review/Relearning -> conjProduce (produce the
+/// form, harder). Not literal spec text.
+QuizType? chooseConjugationFormat({
+  required bool isNew,
+  required int state,
+}) {
+  if (isNew) return null;
+  if (state == fsrs.State.learning.value) {
+    return QuizType.conjIdentify;
+  }
+  return QuizType.conjProduce;
+}

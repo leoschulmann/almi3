@@ -182,6 +182,37 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
         ))
         .toList();
   }
+  // SELECT id FROM verb_table WHERE binyan_id = ? AND id IN (?)
+  // TODO(spec §7.2): pool candidates are restricted to [candidateIds] (the
+  // set of verbs whose lexeme is already known, per §7.3's "only known
+  // lexemes" guard) — that gate is computed in user.db, so it's passed in
+  // rather than joined here (no cross-db joins, §2.3).
+  Future<List<int>> getVerbIdsByBinyan(int binyanId, List<int> candidateIds) async {
+    if (candidateIds.isEmpty) return [];
+    final rows = await (database.select(database.verbTable)
+          ..where((t) => t.binyanId.equals(binyanId) & t.id.isIn(candidateIds)))
+        .get();
+    return rows.map((r) => r.id).toList();
+  }
+
+  // SELECT DISTINCT verb_id FROM verb_gizrah_jointable WHERE verb_id IN (?)
+  Future<Set<int>> getVerbIdsWithAnyGizrah(List<int> verbIds) async {
+    if (verbIds.isEmpty) return {};
+    final rows = await (database.select(database.verbGizrahTable)
+          ..where((t) => t.verbId.isIn(verbIds)))
+        .get();
+    return rows.map((r) => r.verbId).toSet();
+  }
+
+  // SELECT verb_id FROM verb_gizrah_jointable WHERE gizrah_id = ? AND verb_id IN (?)
+  Future<Set<int>> getVerbIdsWithGizrah(int gizrahId, List<int> verbIds) async {
+    if (verbIds.isEmpty) return {};
+    final rows = await (database.select(database.verbGizrahTable)
+          ..where((t) => t.gizrahId.equals(gizrahId) & t.verbId.isIn(verbIds)))
+        .get();
+    return rows.map((r) => r.verbId).toSet();
+  }
+
   // SELECT COUNT(*) FROM verb_table
   Future<int> getTotalCount() async {
     final countExp = database.verbTable.id.count();

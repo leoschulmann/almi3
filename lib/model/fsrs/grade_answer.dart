@@ -17,6 +17,10 @@ int gradeAnswer(QuizResult result) {
 
   switch (result.quizType) {
     case QuizType.typedProduction:
+    case QuizType.conjProduce:
+    case QuizType.conjIdentify:
+      // Free input / an operation, not guessing (§5.3): full scale, same as
+      // typed_production for both conjugation formats.
       if (result.hadTypo) return ratingHard;
       if (result.responseTimeMs < typedProductionFastMs) return ratingEasy;
       if (result.responseTimeMs > typedProductionSlowMs) return ratingHard;

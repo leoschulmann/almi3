@@ -3,6 +3,7 @@ import 'package:almi3/core/clock.dart';
 import 'package:almi3/model/db/db_providers.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/answer_log_codes.dart';
+import 'package:almi3/model/fsrs/grade_answer.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/model/fsrs/scheduled_review_service.dart';
@@ -58,6 +59,38 @@ Future<int> _insertCard(
           cardId: Value(cardId),
           lexemeProgressId: lexemeProgressId,
           direction: direction,
+        ),
+      );
+  return cardId;
+}
+
+Future<int> _insertConjugationCard(
+  UserDatabase db, {
+  required int due,
+  required int state,
+  int? step,
+}) async {
+  final cardId = await db.into(db.cardFsrsTable).insert(
+        CardFsrsTableCompanion.insert(
+          cardType: 1,
+          due: due,
+          state: state,
+          step: Value(step),
+          stability: Value(state != fsrs.State.learning.value ? 10.0 : null),
+          difficulty: Value(state != fsrs.State.learning.value ? 5.0 : null),
+          lastReview: Value(state != fsrs.State.learning.value ? due - 86400 : null),
+          createdAt: 1000,
+        ),
+      );
+  await db.into(db.conjugationCardTable).insert(
+        ConjugationCardTableCompanion.insert(
+          cardId: Value(cardId),
+          binyanId: 1,
+          gizrahId: const Value(null),
+          tense: 0,
+          person: 0,
+          plurality: 0,
+          gender: 0,
         ),
       );
   return cardId;
@@ -160,6 +193,38 @@ void main() {
         quizResult: const QuizResult(quizType: QuizType.mc2Recognition, wasCorrect: false, responseTimeMs: 1000),
       );
       expect(updatedLearning.lapses, 0);
+    });
+
+    test('getDueConjugationQueue returns only conjugation cards, ordered by due asc', () async {
+      final now = nowUtcSeconds();
+      await _insertCard(db, due: now - 100, state: fsrs.State.learning.value, step: 0); // lexical, excluded
+      final conjIdSoon =
+          await _insertConjugationCard(db, due: now - 500, state: fsrs.State.learning.value, step: 0);
+      final conjIdLong =
+          await _insertConjugationCard(db, due: now - 5000, state: fsrs.State.learning.value, step: 0);
+
+      final queue = await service.getDueConjugationQueue();
+      expect(queue.map((d) => d.cardFsrsRow.id).toList(), [conjIdLong, conjIdSoon]);
+    });
+
+    test('submitConjugationAnswer runs a real reviewCard and logs shownVerbId', () async {
+      final now = nowUtcSeconds();
+      await _insertConjugationCard(db, due: now - 100, state: fsrs.State.review.value);
+      final due = (await service.getDueConjugationQueue()).single;
+
+      final updated = await service.submitConjugationAnswer(
+        due: due,
+        quizResult: const QuizResult(quizType: QuizType.conjProduce, wasCorrect: true, responseTimeMs: 5000),
+        shownVerbId: 42,
+      );
+
+      expect(updated.reps, 1);
+      expect(updated.stability, isNotNull);
+
+      final log = (await db.select(db.answerLogTable).get()).single;
+      expect(log.shownVerbId, 42);
+      expect(log.quizType, QuizType.conjProduce.value);
+      expect(log.rating, ratingGood);
     });
   });
 }

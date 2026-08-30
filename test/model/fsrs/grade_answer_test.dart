@@ -74,5 +74,29 @@ void main() {
         expect(gradeAnswer(r), ratingGood);
       });
     });
+
+    group('conjugation formats (full scale, like typed_production)', () {
+      for (final qt in [QuizType.conjProduce, QuizType.conjIdentify]) {
+        test('${qt.name}: correct + typo -> Hard', () {
+          final r = QuizResult(quizType: qt, wasCorrect: true, responseTimeMs: 500, hadTypo: true);
+          expect(gradeAnswer(r), ratingHard);
+        });
+
+        test('${qt.name}: correct + fast -> Easy', () {
+          final r = QuizResult(quizType: qt, wasCorrect: true, responseTimeMs: 100);
+          expect(gradeAnswer(r), ratingEasy);
+        });
+
+        test('${qt.name}: correct + slow -> Hard', () {
+          final r = QuizResult(quizType: qt, wasCorrect: true, responseTimeMs: 20000);
+          expect(gradeAnswer(r), ratingHard);
+        });
+
+        test('${qt.name}: correct + normal speed -> Good', () {
+          final r = QuizResult(quizType: qt, wasCorrect: true, responseTimeMs: 5000);
+          expect(gradeAnswer(r), ratingGood);
+        });
+      }
+    });
   });
 }

@@ -85,4 +85,20 @@ void main() {
       );
     });
   });
+
+  group('chooseConjugationFormat', () {
+    test('isNew always returns null', () {
+      expect(chooseConjugationFormat(isNew: true, state: fsrs.State.learning.value), isNull);
+      expect(chooseConjugationFormat(isNew: true, state: fsrs.State.review.value), isNull);
+    });
+
+    test('Learning -> conjIdentify', () {
+      expect(chooseConjugationFormat(isNew: false, state: fsrs.State.learning.value), QuizType.conjIdentify);
+    });
+
+    test('Review/Relearning -> conjProduce', () {
+      expect(chooseConjugationFormat(isNew: false, state: fsrs.State.review.value), QuizType.conjProduce);
+      expect(chooseConjugationFormat(isNew: false, state: fsrs.State.relearning.value), QuizType.conjProduce);
+    });
+  });
 }

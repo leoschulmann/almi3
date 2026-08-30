@@ -10,14 +10,14 @@ import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/model/fsrs/scheduler_provider.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
+import 'package:almi3/model/repository/user/conjugation_card_repository.dart';
 import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 
-/// A due card_fsrs row joined with its lexical_card row. Only the lexical
-/// subtype is handled here — conjugation_card cards (§7) are a later step.
+/// A due card_fsrs row joined with its lexical_card row.
 class DueLexicalCard {
   final CardFsrsTableData cardFsrsRow;
   final LexicalCardTableData lexicalCardRow;
@@ -25,11 +25,20 @@ class DueLexicalCard {
   const DueLexicalCard({required this.cardFsrsRow, required this.lexicalCardRow});
 }
 
+/// A due card_fsrs row joined with its conjugation_card row (§7).
+class DueConjugationCard {
+  final CardFsrsTableData cardFsrsRow;
+  final ConjugationCardTableData conjugationCardRow;
+
+  const DueConjugationCard({required this.cardFsrsRow, required this.conjugationCardRow});
+}
+
 final scheduledReviewServiceProvider = Provider(
   (ref) => ScheduledReviewService(
     ref: ref,
     cardFsrsRepository: ref.watch(cardFsrsRepositoryProvider),
     lexicalCardRepository: ref.watch(lexicalCardRepositoryProvider),
+    conjugationCardRepository: ref.watch(conjugationCardRepositoryProvider),
     answerLogRepository: ref.watch(answerLogRepositoryProvider),
     fsrsParamsRepository: ref.watch(fsrsParamsRepositoryProvider),
   ),
@@ -42,6 +51,7 @@ class ScheduledReviewService {
   final Ref ref;
   final CardFsrsRepository cardFsrsRepository;
   final LexicalCardRepository lexicalCardRepository;
+  final ConjugationCardRepository conjugationCardRepository;
   final AnswerLogRepository answerLogRepository;
   final FsrsParamsRepository fsrsParamsRepository;
 
@@ -49,13 +59,14 @@ class ScheduledReviewService {
     required this.ref,
     required this.cardFsrsRepository,
     required this.lexicalCardRepository,
+    required this.conjugationCardRepository,
     required this.answerLogRepository,
     required this.fsrsParamsRepository,
   });
 
   /// Due card_fsrs rows (state != none by construction — the library has no
   /// New state, §14) joined with their lexical_card row, ordered by due asc.
-  /// Rows without a lexical_card (i.e. conjugation_card) are skipped for now.
+  /// Rows without a lexical_card (i.e. conjugation_card) are skipped.
   Future<List<DueLexicalCard>> getDueQueue({int? limit}) async {
     final dueRows = await cardFsrsRepository.getByDueBefore(nowUtcSeconds(), limit: limit);
     final result = <DueLexicalCard>[];
@@ -68,26 +79,46 @@ class ScheduledReviewService {
     return result;
   }
 
-  /// Picks a quiz format for a due card (§5.2).
+  /// Same as [getDueQueue] but for conjugation_card cards (§7).
+  Future<List<DueConjugationCard>> getDueConjugationQueue({int? limit}) async {
+    final dueRows = await cardFsrsRepository.getByDueBefore(nowUtcSeconds(), limit: limit);
+    final result = <DueConjugationCard>[];
+    for (final row in dueRows) {
+      final conjugationCard = await conjugationCardRepository.getByCardId(row.id);
+      if (conjugationCard != null) {
+        result.add(DueConjugationCard(cardFsrsRow: row, conjugationCardRow: conjugationCard));
+      }
+    }
+    return result;
+  }
+
+  bool _isNewRow(CardFsrsTableData row) =>
+      isNew(row.reps, row.lastReview != null ? DateTime.fromMillisecondsSinceEpoch(row.lastReview! * 1000) : null);
+
+  /// Picks a quiz format for a due lexical card (§5.2).
   QuizType? prepareQuiz(DueLexicalCard due) {
     final row = due.cardFsrsRow;
     return chooseFormat(
-      isNew: isNew(row.reps, row.lastReview != null ? DateTime.fromMillisecondsSinceEpoch(row.lastReview! * 1000) : null),
+      isNew: _isNewRow(row),
       state: row.state,
       step: row.step,
       direction: due.lexicalCardRow.direction,
     );
   }
 
-  /// Grades the answer, runs the single legal Scheduler.reviewCard call,
-  /// and persists both the updated card_fsrs row and the answer_log entry.
-  Future<CardFsrsTableData> submitAnswer({
-    required DueLexicalCard due,
-    required QuizResult quizResult,
-  }) async {
+  /// Picks a quiz format for a due conjugation card (§5.2/§7).
+  QuizType? prepareConjugationQuiz(DueConjugationCard due) {
     final row = due.cardFsrsRow;
-    final rating = gradeAnswer(quizResult);
+    return chooseConjugationFormat(isNew: _isNewRow(row), state: row.state);
+  }
 
+  /// Runs the single legal Scheduler.reviewCard call and persists the
+  /// updated card_fsrs row. Shared by both the lexical and conjugation
+  /// paths — only the answer_log row differs (conjugation logs shownVerbId).
+  Future<({CardFsrsTableCompanion companion, int paramsVersion})> _reviewAndPersist(
+    CardFsrsTableData row,
+    int rating,
+  ) async {
     final scheduler = await ref.read(schedulerProvider.future);
     final paramsVersion = (await fsrsParamsRepository.getLatest())!.version;
 
@@ -108,6 +139,19 @@ class ScheduledReviewService {
     );
     await cardFsrsRepository.updateCard(updatedCompanion);
 
+    return (companion: updatedCompanion, paramsVersion: paramsVersion);
+  }
+
+  /// Grades the answer, runs the single legal Scheduler.reviewCard call,
+  /// and persists both the updated card_fsrs row and the answer_log entry.
+  Future<CardFsrsTableData> submitAnswer({
+    required DueLexicalCard due,
+    required QuizResult quizResult,
+  }) async {
+    final row = due.cardFsrsRow;
+    final rating = gradeAnswer(quizResult);
+    final persisted = await _reviewAndPersist(row, rating);
+
     await answerLogRepository.insert(
       AnswerLogTableCompanion.insert(
         cardId: row.id,
@@ -118,7 +162,38 @@ class ScheduledReviewService {
         wasCorrect: quizResult.wasCorrect,
         quizType: quizResult.quizType.value,
         responseTimeMs: Value(quizResult.responseTimeMs),
-        fsrsParamsVersion: paramsVersion,
+        fsrsParamsVersion: persisted.paramsVersion,
+      ),
+    );
+
+    return (await cardFsrsRepository.getById(row.id))!;
+  }
+
+  /// Same as [submitAnswer] but for a conjugation card (§7.5): [shownVerbId]
+  /// is the verb substituted into the quiz (from [ConjugationPoolService]),
+  /// logged into answer_log.shown_verb_id for later "which gizrah is weak"
+  /// analysis.
+  Future<CardFsrsTableData> submitConjugationAnswer({
+    required DueConjugationCard due,
+    required QuizResult quizResult,
+    required int shownVerbId,
+  }) async {
+    final row = due.cardFsrsRow;
+    final rating = gradeAnswer(quizResult);
+    final persisted = await _reviewAndPersist(row, rating);
+
+    await answerLogRepository.insert(
+      AnswerLogTableCompanion.insert(
+        cardId: row.id,
+        answeredAt: nowUtcSeconds(),
+        source: answerSourceScheduled,
+        countedInFsrs: true,
+        rating: Value(rating),
+        wasCorrect: quizResult.wasCorrect,
+        quizType: quizResult.quizType.value,
+        responseTimeMs: Value(quizResult.responseTimeMs),
+        shownVerbId: Value(shownVerbId),
+        fsrsParamsVersion: persisted.paramsVersion,
       ),
     );
 
