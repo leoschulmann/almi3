@@ -19,6 +19,13 @@ class _FixedSettingsNotifier extends SettingsNotifier {
   AppSettings build() => AppSettings.defaultSettings();
 }
 
+/// Settings that would starve new-lexeme intake entirely (zero new cards/day,
+/// no active decks) -- used to prove the due queue doesn't read them (CAP-7).
+class _NoNewCardsSettingsNotifier extends SettingsNotifier {
+  @override
+  AppSettings build() => AppSettings.defaultSettings().copyWith(newCardsPerDay: 0, activeDeckIds: const []);
+}
+
 Future<int> _insertCard(
   UserDatabase db, {
   required int due,
@@ -276,6 +283,25 @@ void main() {
         final capped = await service.getDueQueuePrioritized(dailyCap: 1);
         expect(capped, hasLength(1));
         expect(capped.single.cardFsrsRow.id, forgottenId);
+      });
+    });
+
+    group('due queue independence from deck/new-limit settings (CAP-7, §9.1)', () {
+      test('a due card is returned even with new_cards_per_day=0 and no active decks', () async {
+        final now = nowUtcSeconds();
+        final starvedContainer = ProviderContainer(
+          overrides: [
+            userDbProvider.overrideWithValue(db),
+            settingsProvider.overrideWith(() => _NoNewCardsSettingsNotifier()),
+          ],
+        );
+        addTearDown(starvedContainer.dispose);
+        final starvedService = starvedContainer.read(scheduledReviewServiceProvider);
+
+        final cardId = await _insertCard(db, due: now - 100, state: fsrs.State.review.value, stability: 10);
+
+        final due = await starvedService.getDueQueue();
+        expect(due.map((d) => d.cardFsrsRow.id).toList(), [cardId]);
       });
     });
 
