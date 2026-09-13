@@ -1,9 +1,11 @@
 import 'package:almi3/core/clock.dart';
+import 'package:almi3/core/engine_config.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/answer_log_codes.dart';
 import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/choose_format.dart';
 import 'package:almi3/model/fsrs/grade_answer.dart';
+import 'package:almi3/model/fsrs/health.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/model/fsrs/review_persistence.dart';
@@ -40,6 +42,7 @@ final scheduledReviewServiceProvider = Provider(
     conjugationCardRepository: ref.watch(conjugationCardRepositoryProvider),
     answerLogRepository: ref.watch(answerLogRepositoryProvider),
     fsrsParamsRepository: ref.watch(fsrsParamsRepositoryProvider),
+    healthService: ref.watch(healthServiceProvider),
   ),
 );
 
@@ -53,6 +56,7 @@ class ScheduledReviewService {
   final ConjugationCardRepository conjugationCardRepository;
   final AnswerLogRepository answerLogRepository;
   final FsrsParamsRepository fsrsParamsRepository;
+  final HealthService healthService;
 
   ScheduledReviewService({
     required this.ref,
@@ -61,6 +65,7 @@ class ScheduledReviewService {
     required this.conjugationCardRepository,
     required this.answerLogRepository,
     required this.fsrsParamsRepository,
+    required this.healthService,
   });
 
   /// Due card_fsrs rows (state != none by construction — the library has no
@@ -89,6 +94,39 @@ class ScheduledReviewService {
       }
     }
     return result;
+  }
+
+  /// Same as [getDueQueue], but reprioritized when the queue is a "debt
+  /// backlog" (§9.4): above [backlogThreshold] due cards, sort by
+  /// retrievability ascending (most-forgotten first) instead of due-date —
+  /// then optionally slice to [dailyCap] (a caller decision, not hardcoded;
+  /// stretching a backlog across days is a session/UI concern, §9.4).
+  Future<List<DueLexicalCard>> getDueQueuePrioritized({int? dailyCap}) async {
+    final due = await getDueQueue();
+    final prioritized = await _prioritizeIfBacklog(due, (d) => d.cardFsrsRow);
+    return dailyCap != null ? prioritized.take(dailyCap).toList() : prioritized;
+  }
+
+  /// Same as [getDueQueuePrioritized] but for conjugation cards (§7).
+  Future<List<DueConjugationCard>> getDueConjugationQueuePrioritized({int? dailyCap}) async {
+    final due = await getDueConjugationQueue();
+    final prioritized = await _prioritizeIfBacklog(due, (d) => d.cardFsrsRow);
+    return dailyCap != null ? prioritized.take(dailyCap).toList() : prioritized;
+  }
+
+  Future<List<T>> _prioritizeIfBacklog<T>(
+    List<T> due,
+    CardFsrsTableData Function(T) cardOf,
+  ) async {
+    if (due.length <= backlogThreshold) return due;
+
+    final withRetrievability = <(T, double)>[];
+    for (final item in due) {
+      final r = await healthService.cardRetrievability(cardOf(item));
+      withRetrievability.add((item, r));
+    }
+    withRetrievability.sort((a, b) => a.$2.compareTo(b.$2));
+    return withRetrievability.map((e) => e.$1).toList();
   }
 
   bool _isNewRow(CardFsrsTableData row) =>
@@ -149,6 +187,7 @@ class ScheduledReviewService {
         quizType: quizResult.quizType.value,
         responseTimeMs: Value(quizResult.responseTimeMs),
         fsrsParamsVersion: persisted.paramsVersion,
+        stateBefore: stateBeforeValue(row),
       ),
     );
 
@@ -180,6 +219,7 @@ class ScheduledReviewService {
         responseTimeMs: Value(quizResult.responseTimeMs),
         shownVerbId: Value(shownVerbId),
         fsrsParamsVersion: persisted.paramsVersion,
+        stateBefore: stateBeforeValue(row),
       ),
     );
 

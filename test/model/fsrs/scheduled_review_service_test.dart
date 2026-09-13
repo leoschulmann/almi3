@@ -164,6 +164,7 @@ void main() {
       expect(log.wasCorrect, isTrue);
       expect(log.quizType, QuizType.mc2Recognition.value);
       expect(log.fsrsParamsVersion, isNotNull);
+      expect(log.stateBefore, 0); // New (reps was 0, lastReview was null)
     });
 
     test('lapse counting: Review-state Again increments lapses, Learning-state Again does not', () async {
@@ -225,6 +226,57 @@ void main() {
       expect(log.shownVerbId, 42);
       expect(log.quizType, QuizType.conjProduce.value);
       expect(log.rating, ratingGood);
+      expect(log.stateBefore, fsrs.State.review.value);
+    });
+
+    group('debt backlog prioritization (§9.4)', () {
+      test('getDueQueuePrioritized keeps due-asc order when queue is at/under backlogThreshold', () async {
+        final now = nowUtcSeconds();
+        final idA = await _insertCard(db, due: now - 5000, state: fsrs.State.review.value, stability: 10);
+        final idB = await _insertCard(db, due: now - 100, state: fsrs.State.review.value, stability: 10);
+
+        final prioritized = await service.getDueQueuePrioritized();
+        expect(prioritized.map((d) => d.cardFsrsRow.id).toList(), [idA, idB]);
+      });
+
+      test('getDueQueuePrioritized sorts by retrievability ascending once past backlogThreshold', () async {
+        final now = nowUtcSeconds();
+
+        // Push the queue size just past backlogThreshold (30) so reprioritization kicks in.
+        for (var i = 0; i < 30; i++) {
+          await _insertCard(db, due: now - 100, state: fsrs.State.review.value, stability: 1000);
+        }
+        // Almost forgotten (low stability, long-lapsed): should end up first despite being due later.
+        final forgottenId = await _insertCard(
+          db,
+          due: now - 1,
+          state: fsrs.State.review.value,
+          stability: 0.5,
+          lastReview: now - 86400 * 60,
+        );
+
+        final prioritized = await service.getDueQueuePrioritized();
+        expect(prioritized.length, 31);
+        expect(prioritized.first.cardFsrsRow.id, forgottenId);
+      });
+
+      test('getDueQueuePrioritized respects dailyCap after sorting', () async {
+        final now = nowUtcSeconds();
+        for (var i = 0; i < 30; i++) {
+          await _insertCard(db, due: now - 100, state: fsrs.State.review.value, stability: 1000);
+        }
+        final forgottenId = await _insertCard(
+          db,
+          due: now - 1,
+          state: fsrs.State.review.value,
+          stability: 0.5,
+          lastReview: now - 86400 * 60,
+        );
+
+        final capped = await service.getDueQueuePrioritized(dailyCap: 1);
+        expect(capped, hasLength(1));
+        expect(capped.single.cardFsrsRow.id, forgottenId);
+      });
     });
   });
 }

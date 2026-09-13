@@ -11,7 +11,8 @@ import 'package:drift/drift.dart';
 //     quiz_type           INTEGER NOT NULL,
 //     response_time_ms    INTEGER,
 //     shown_verb_id       INTEGER,           -- soft-ref
-//     fsrs_params_version INTEGER NOT NULL
+//     fsrs_params_version INTEGER NOT NULL,
+//     state_before        INTEGER NOT NULL   -- 0=New (synthetic) 1=Learning 2=Review 3=Relearning (fsrs ordinal)
 // );
 // CREATE INDEX idx_answerlog_card ON answer_log (card_id, answered_at);
 // CREATE INDEX idx_answerlog_time ON answer_log (answered_at);
@@ -30,6 +31,7 @@ class AnswerLogTable extends Table {
   IntColumn get responseTimeMs => integer().nullable()();
   IntColumn get shownVerbId => integer().nullable()();
   IntColumn get fsrsParamsVersion => integer()();
+  IntColumn get stateBefore => integer()();
 
   @override
   String get tableName => 'answer_log';

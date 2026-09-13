@@ -192,6 +192,7 @@ void main() {
               wasCorrect: true,
               quizType: QuizType.mc2Recognition.value,
               fsrsParamsVersion: 1,
+              stateBefore: 2,
             ),
           );
 
@@ -223,6 +224,7 @@ void main() {
               wasCorrect: true,
               quizType: QuizType.mc2Recognition.value,
               fsrsParamsVersion: 1,
+              stateBefore: 2,
             ),
           );
 
@@ -253,6 +255,7 @@ void main() {
               wasCorrect: false, // incorrect -> no bonus
               quizType: QuizType.mc2Recognition.value,
               fsrsParamsVersion: 1,
+              stateBefore: 2,
             ),
           );
       await db.into(db.answerLogTable).insert(
@@ -265,6 +268,7 @@ void main() {
               wasCorrect: true,
               quizType: QuizType.mc2Recognition.value,
               fsrsParamsVersion: 1,
+              stateBefore: 2,
             ),
           );
 
@@ -296,6 +300,7 @@ void main() {
                 wasCorrect: true,
                 quizType: QuizType.mc2Recognition.value,
                 fsrsParamsVersion: 1,
+                stateBefore: 2,
               ),
             );
       }

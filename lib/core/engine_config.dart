@@ -60,3 +60,8 @@ const double practiceBonusSaturationCap = 0.30;
 /// Not named explicitly in the spec — chosen so a handful of recent correct
 /// practice events already approach the cap, rather than needing dozens.
 const double practiceBonusK = 1.0;
+
+/// Debt backlog (§9.4): a due queue larger than this is treated as a
+/// backlog worth reprioritizing by retrievability instead of due-date —
+/// below this, the extra retrievability computation isn't worth it.
+const int backlogThreshold = 30;

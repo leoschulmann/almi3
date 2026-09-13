@@ -169,6 +169,7 @@ void main() {
           quizType: QuizType.conjProduce.value,
           shownVerbId: const Value(1),
           fsrsParamsVersion: 1,
+          stateBefore: 2,
         ),
       );
 
@@ -189,6 +190,7 @@ void main() {
           quizType: QuizType.conjProduce.value,
           shownVerbId: const Value(1),
           fsrsParamsVersion: 1,
+          stateBefore: 2,
         ),
       );
 

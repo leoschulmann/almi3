@@ -111,6 +111,7 @@ class LexemeStatusActionsService {
         wasCorrect: true,
         quizType: quizTypeNoOp,
         fsrsParamsVersion: paramsVersion,
+        stateBefore: stateBeforeValue(previousCardRow),
       ),
     );
 

@@ -1,6 +1,7 @@
 import 'package:almi3/core/clock.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/answer_log_codes.dart';
+import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/grade_answer.dart';
 import 'package:almi3/model/fsrs/health.dart';
 import 'package:almi3/model/fsrs/practice_gate.dart';
@@ -67,6 +68,7 @@ class PracticeService {
           quizType: quizResult.quizType.value,
           responseTimeMs: Value(quizResult.responseTimeMs),
           fsrsParamsVersion: paramsVersion,
+          stateBefore: stateBeforeValue(row),
         ),
       );
       return row;
@@ -93,6 +95,7 @@ class PracticeService {
         quizType: quizResult.quizType.value,
         responseTimeMs: Value(quizResult.responseTimeMs),
         fsrsParamsVersion: persisted.paramsVersion,
+        stateBefore: stateBeforeValue(row),
       ),
     );
 
