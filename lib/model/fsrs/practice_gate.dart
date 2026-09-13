@@ -13,7 +13,10 @@ bool _isWeakFormat(QuizType quizType) {
     case QuizType.mc4Production:
       return true;
     case QuizType.typedProduction:
+    case QuizType.niqqud:
+    case QuizType.cloze:
     case QuizType.listening:
+    case QuizType.preposition:
     case QuizType.conjProduce:
     case QuizType.conjIdentify:
       return false;
@@ -21,8 +24,7 @@ bool _isWeakFormat(QuizType quizType) {
 }
 
 /// Free-practice gate (§6.3): a practice answer only becomes a real FSRS
-/// review when the card is "worthy" of it. Rule 3 (preposition ambiguity)
-/// is omitted — no preposition entity type exists yet (phase 2, §13).
+/// review when the card is "worthy" of it.
 Future<bool> shouldCountPractice({
   required CardFsrsTableData row,
   required QuizType quizType,
@@ -31,5 +33,8 @@ Future<bool> shouldCountPractice({
   final retrievability = await healthService.cardRetrievability(row);
   if (retrievability > practiceGateRetrievabilityThreshold) return false;
   if (_isWeakFormat(quizType)) return false;
+  // Rule 3: preposition answers may have several correct options — an
+  // ambiguous signal never trusted enough to move FSRS, even in practice.
+  if (quizType == QuizType.preposition) return false;
   return true;
 }

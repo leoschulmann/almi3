@@ -28,11 +28,16 @@ QuizType? chooseFormat({
     return isEarly ? QuizType.mc2Production : QuizType.mc4Production;
   }
 
-  // Review or Relearning: strongest MVP formats.
-  if (!isRecognition) {
-    return QuizType.typedProduction;
-  }
+  // Review or Relearning: strongest formats. preposition is deliberately
+  // excluded here (§5.3: not allowed in scheduled review by default — free
+  // practice only).
   final rng = random ?? Random();
+  if (!isRecognition) {
+    final roll = rng.nextDouble();
+    if (roll < reviewTypedProductionWeight) return QuizType.typedProduction;
+    if (roll < reviewTypedProductionWeight + reviewNiqqudWeight) return QuizType.niqqud;
+    return QuizType.cloze;
+  }
   return rng.nextDouble() < reviewListeningWeight ? QuizType.listening : QuizType.mc4Recognition;
 }
 

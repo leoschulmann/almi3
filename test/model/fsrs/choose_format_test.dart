@@ -51,14 +51,40 @@ void main() {
       );
     });
 
-    test('Review production -> always typedProduction', () {
+    test('Review production -> typedProduction/niqqud/cloze mix by weight (0.7/0.15/0.15), never preposition', () {
       expect(
-        chooseFormat(isNew: false, state: fsrs.State.review.value, step: null, direction: directionProduction),
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionProduction,
+          random: const _FixedRandom(0.0),
+        ),
         QuizType.typedProduction,
       );
       expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionProduction,
+          random: const _FixedRandom(0.75),
+        ),
+        QuizType.niqqud,
+      );
+      expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionProduction,
+          random: const _FixedRandom(0.9),
+        ),
+        QuizType.cloze,
+      );
+      expect(
         chooseFormat(isNew: false, state: fsrs.State.relearning.value, step: 0, direction: directionProduction),
-        QuizType.typedProduction,
+        isNot(QuizType.preposition),
       );
     });
 

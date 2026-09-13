@@ -39,6 +39,12 @@ const int listeningSlowMs = 10000;
 /// over `mc4Recognition` (§5.2 "разнообразие и повторяемость").
 const double reviewListeningWeight = 0.5;
 
+/// Review-state production format mix (§5.2): typed_production dominates,
+/// niqqud/cloze are occasional variety. Must sum to 1.0.
+const double reviewTypedProductionWeight = 0.7;
+const double reviewNiqqudWeight = 0.15;
+const double reviewClozeWeight = 0.15;
+
 // Free-practice gate (§6.3) and composite health bonus (§8.3) constants.
 // Rough defaults, not tuned on real data yet.
 

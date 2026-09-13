@@ -75,6 +75,67 @@ void main() {
       });
     });
 
+    group('niqqud (full scale, like typed_production)', () {
+      test('correct + typo -> Hard', () {
+        final r = QuizResult(quizType: QuizType.niqqud, wasCorrect: true, responseTimeMs: 500, hadTypo: true);
+        expect(gradeAnswer(r), ratingHard);
+      });
+
+      test('correct + fast -> Easy', () {
+        final r = QuizResult(quizType: QuizType.niqqud, wasCorrect: true, responseTimeMs: 100);
+        expect(gradeAnswer(r), ratingEasy);
+      });
+
+      test('correct + slow -> Hard', () {
+        final r = QuizResult(quizType: QuizType.niqqud, wasCorrect: true, responseTimeMs: 20000);
+        expect(gradeAnswer(r), ratingHard);
+      });
+
+      test('correct + normal speed -> Good', () {
+        final r = QuizResult(quizType: QuizType.niqqud, wasCorrect: true, responseTimeMs: 5000);
+        expect(gradeAnswer(r), ratingGood);
+      });
+    });
+
+    group('cloze (medium signal, like listening)', () {
+      test('correct + fast -> Easy', () {
+        final r = QuizResult(quizType: QuizType.cloze, wasCorrect: true, responseTimeMs: 100);
+        expect(gradeAnswer(r), ratingEasy);
+      });
+
+      test('correct + slow -> Hard', () {
+        final r = QuizResult(quizType: QuizType.cloze, wasCorrect: true, responseTimeMs: 100000);
+        expect(gradeAnswer(r), ratingHard);
+      });
+
+      test('correct + normal speed -> Good', () {
+        final r = QuizResult(quizType: QuizType.cloze, wasCorrect: true, responseTimeMs: 6000);
+        expect(gradeAnswer(r), ratingGood);
+      });
+    });
+
+    group('preposition (ambiguous, binary only)', () {
+      test('incorrect -> Again', () {
+        final r = QuizResult(quizType: QuizType.preposition, wasCorrect: false, responseTimeMs: 1);
+        expect(gradeAnswer(r), ratingAgain);
+      });
+
+      test('correct, however fast -> Good, never Easy', () {
+        final r = QuizResult(quizType: QuizType.preposition, wasCorrect: true, responseTimeMs: 1);
+        expect(gradeAnswer(r), ratingGood);
+      });
+
+      test('correct, however slow -> Good, never Hard', () {
+        final r = QuizResult(quizType: QuizType.preposition, wasCorrect: true, responseTimeMs: 999999);
+        expect(gradeAnswer(r), ratingGood);
+      });
+
+      test('correct with a typo -> still Good (typo concept does not apply to a choice)', () {
+        final r = QuizResult(quizType: QuizType.preposition, wasCorrect: true, responseTimeMs: 1, hadTypo: true);
+        expect(gradeAnswer(r), ratingGood);
+      });
+    });
+
     group('conjugation formats (full scale, like typed_production)', () {
       for (final qt in [QuizType.conjProduce, QuizType.conjIdentify]) {
         test('${qt.name}: correct + typo -> Hard', () {

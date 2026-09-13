@@ -17,10 +17,11 @@ int gradeAnswer(QuizResult result) {
 
   switch (result.quizType) {
     case QuizType.typedProduction:
+    case QuizType.niqqud:
     case QuizType.conjProduce:
     case QuizType.conjIdentify:
       // Free input / an operation, not guessing (§5.3): full scale, same as
-      // typed_production for both conjugation formats.
+      // typed_production for niqqud and both conjugation formats.
       if (result.hadTypo) return ratingHard;
       if (result.responseTimeMs < typedProductionFastMs) return ratingEasy;
       if (result.responseTimeMs > typedProductionSlowMs) return ratingHard;
@@ -34,9 +35,15 @@ int gradeAnswer(QuizResult result) {
       return result.responseTimeMs > mcSlowMs ? ratingHard : ratingGood;
 
     case QuizType.listening:
+    case QuizType.cloze:
       // Medium signal: Easy only on a fast, unambiguous correct answer.
       if (result.responseTimeMs < listeningFastMs) return ratingEasy;
       if (result.responseTimeMs > listeningSlowMs) return ratingHard;
+      return ratingGood;
+
+    case QuizType.preposition:
+      // Ambiguous signal (possibly several correct prepositions, §5.3):
+      // binary only, never Hard/Easy regardless of speed or typo.
       return ratingGood;
   }
 }

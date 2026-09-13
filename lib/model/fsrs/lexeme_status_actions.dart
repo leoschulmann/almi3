@@ -4,6 +4,7 @@ import 'package:almi3/model/fsrs/answer_log_codes.dart';
 import 'package:almi3/model/fsrs/card_mapper.dart';
 import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/lexeme_introduction.dart' show lexemeStatusActive;
+import 'package:almi3/model/fsrs/production_card_introduction.dart';
 import 'package:almi3/model/fsrs/scheduler_provider.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
@@ -41,6 +42,7 @@ final lexemeStatusActionsServiceProvider = Provider(
     cardFsrsRepository: ref.watch(cardFsrsRepositoryProvider),
     answerLogRepository: ref.watch(answerLogRepositoryProvider),
     fsrsParamsRepository: ref.watch(fsrsParamsRepositoryProvider),
+    productionCardIntroductionService: ref.watch(productionCardIntroductionServiceProvider),
   ),
 );
 
@@ -54,6 +56,7 @@ class LexemeStatusActionsService {
   final CardFsrsRepository cardFsrsRepository;
   final AnswerLogRepository answerLogRepository;
   final FsrsParamsRepository fsrsParamsRepository;
+  final ProductionCardIntroductionService productionCardIntroductionService;
 
   LexemeStatusActionsService({
     required this.ref,
@@ -62,6 +65,7 @@ class LexemeStatusActionsService {
     required this.cardFsrsRepository,
     required this.answerLogRepository,
     required this.fsrsParamsRepository,
+    required this.productionCardIntroductionService,
   });
 
   /// "Я знаю" (§10): exactly one Easy review on the lexeme's currently-New
@@ -113,6 +117,14 @@ class LexemeStatusActionsService {
         fsrsParamsVersion: paramsVersion,
         stateBefore: stateBeforeValue(previousCardRow),
       ),
+    );
+    
+    final updatedRow = (await cardFsrsRepository.getById(previousCardRow.id))!;
+    await maybeTriggerProductionIntroduction(
+      beforeRow: previousCardRow,
+      afterRow: updatedRow,
+      lexicalCardRepository: lexicalCardRepository,
+      productionCardIntroductionService: productionCardIntroductionService,
     );
 
     return MarkKnownResult(

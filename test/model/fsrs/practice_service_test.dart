@@ -112,6 +112,35 @@ void main() {
       expect(log.fsrsParamsVersion, isNotNull);
     });
 
+    test('gate true, graduating Learning->Review, spawns a production card (§3.3)', () async {
+      final row = await insertCard(state: fsrs.State.learning.value, step: 0);
+      final lexemeProgressId = await db.into(db.lexemeProgressTable).insert(
+            LexemeProgressTableCompanion.insert(
+              entityType: 0,
+              entityId: 1,
+              status: 0,
+              createdAt: 1000,
+              updatedAt: 1000,
+            ),
+          );
+      await db.into(db.lexicalCardTable).insert(
+            LexicalCardTableCompanion.insert(
+              cardId: Value(row.id),
+              lexemeProgressId: lexemeProgressId,
+              direction: directionRecognition,
+            ),
+          );
+
+      final updated = await service.submitPracticeAnswer(
+        row: row,
+        quizResult: const QuizResult(quizType: QuizType.typedProduction, wasCorrect: true, responseTimeMs: 100),
+      );
+      expect(updated.state, fsrs.State.review.value);
+
+      final lexicalCards = await db.select(db.lexicalCardTable).get();
+      expect(lexicalCards.map((c) => c.direction).toSet(), {directionRecognition, directionProduction});
+    });
+
     test('gate false (weak format): leaves card_fsrs untouched even on a mature due card', () async {
       final now = DateTime.now().toUtc();
       final row = await insertCard(

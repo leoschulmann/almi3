@@ -6,6 +6,7 @@ import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/choose_format.dart';
 import 'package:almi3/model/fsrs/grade_answer.dart';
 import 'package:almi3/model/fsrs/health.dart';
+import 'package:almi3/model/fsrs/production_card_introduction.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/model/fsrs/review_persistence.dart';
@@ -43,6 +44,7 @@ final scheduledReviewServiceProvider = Provider(
     answerLogRepository: ref.watch(answerLogRepositoryProvider),
     fsrsParamsRepository: ref.watch(fsrsParamsRepositoryProvider),
     healthService: ref.watch(healthServiceProvider),
+    productionCardIntroductionService: ref.watch(productionCardIntroductionServiceProvider),
   ),
 );
 
@@ -57,6 +59,7 @@ class ScheduledReviewService {
   final AnswerLogRepository answerLogRepository;
   final FsrsParamsRepository fsrsParamsRepository;
   final HealthService healthService;
+  final ProductionCardIntroductionService productionCardIntroductionService;
 
   ScheduledReviewService({
     required this.ref,
@@ -66,6 +69,7 @@ class ScheduledReviewService {
     required this.answerLogRepository,
     required this.fsrsParamsRepository,
     required this.healthService,
+    required this.productionCardIntroductionService,
   });
 
   /// Due card_fsrs rows (state != none by construction — the library has no
@@ -191,7 +195,14 @@ class ScheduledReviewService {
       ),
     );
 
-    return (await cardFsrsRepository.getById(row.id))!;
+    final updatedRow = (await cardFsrsRepository.getById(row.id))!;
+    await maybeTriggerProductionIntroduction(
+      beforeRow: row,
+      afterRow: updatedRow,
+      lexicalCardRepository: lexicalCardRepository,
+      productionCardIntroductionService: productionCardIntroductionService,
+    );
+    return updatedRow;
   }
 
   /// Same as [submitAnswer] but for a conjugation card (§7.5): [shownVerbId]

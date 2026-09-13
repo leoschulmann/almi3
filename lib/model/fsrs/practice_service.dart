@@ -5,12 +5,14 @@ import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/grade_answer.dart';
 import 'package:almi3/model/fsrs/health.dart';
 import 'package:almi3/model/fsrs/practice_gate.dart';
+import 'package:almi3/model/fsrs/production_card_introduction.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/review_persistence.dart';
 import 'package:almi3/model/fsrs/scheduler_provider.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
 import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
+import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +23,8 @@ final practiceServiceProvider = Provider(
     answerLogRepository: ref.watch(answerLogRepositoryProvider),
     fsrsParamsRepository: ref.watch(fsrsParamsRepositoryProvider),
     healthService: ref.watch(healthServiceProvider),
+    lexicalCardRepository: ref.watch(lexicalCardRepositoryProvider),
+    productionCardIntroductionService: ref.watch(productionCardIntroductionServiceProvider),
   ),
 );
 
@@ -34,6 +38,8 @@ class PracticeService {
   final AnswerLogRepository answerLogRepository;
   final FsrsParamsRepository fsrsParamsRepository;
   final HealthService healthService;
+  final LexicalCardRepository lexicalCardRepository;
+  final ProductionCardIntroductionService productionCardIntroductionService;
 
   PracticeService({
     required this.ref,
@@ -41,6 +47,8 @@ class PracticeService {
     required this.answerLogRepository,
     required this.fsrsParamsRepository,
     required this.healthService,
+    required this.lexicalCardRepository,
+    required this.productionCardIntroductionService,
   });
 
   /// Submits a practice answer for [row]. Returns the card_fsrs row as it
@@ -99,6 +107,13 @@ class PracticeService {
       ),
     );
 
-    return (await cardFsrsRepository.getById(row.id))!;
+    final updatedRow = (await cardFsrsRepository.getById(row.id))!;
+    await maybeTriggerProductionIntroduction(
+      beforeRow: row,
+      afterRow: updatedRow,
+      lexicalCardRepository: lexicalCardRepository,
+      productionCardIntroductionService: productionCardIntroductionService,
+    );
+    return updatedRow;
   }
 }

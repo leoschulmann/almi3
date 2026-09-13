@@ -278,5 +278,50 @@ void main() {
         expect(capped.single.cardFsrsRow.id, forgottenId);
       });
     });
+
+    group('production card trigger (§3.3)', () {
+      test('graduating a recognition card to Review via submitAnswer spawns a production card', () async {
+        final now = nowUtcSeconds();
+        await _insertCard(db, due: now - 100, state: fsrs.State.learning.value, step: 0);
+        final due = (await service.getDueQueue()).single;
+
+        await service.submitAnswer(
+          due: due,
+          quizResult: const QuizResult(quizType: QuizType.typedProduction, wasCorrect: true, responseTimeMs: 100),
+        );
+
+        final lexicalCards = await db.select(db.lexicalCardTable).get();
+        expect(lexicalCards.map((c) => c.direction).toSet(), {directionRecognition, directionProduction});
+      });
+
+      test('an Again answer that stays in Learning does not spawn a production card', () async {
+        final now = nowUtcSeconds();
+        await _insertCard(db, due: now - 100, state: fsrs.State.learning.value, step: 0);
+        final due = (await service.getDueQueue()).single;
+
+        await service.submitAnswer(
+          due: due,
+          quizResult: const QuizResult(quizType: QuizType.mc2Recognition, wasCorrect: false, responseTimeMs: 100),
+        );
+
+        final lexicalCards = await db.select(db.lexicalCardTable).get();
+        expect(lexicalCards, hasLength(1));
+      });
+
+      test('submitConjugationAnswer never spawns a lexical production card', () async {
+        final now = nowUtcSeconds();
+        await _insertConjugationCard(db, due: now - 100, state: fsrs.State.learning.value, step: 0);
+        final due = (await service.getDueConjugationQueue()).single;
+
+        await service.submitConjugationAnswer(
+          due: due,
+          quizResult: const QuizResult(quizType: QuizType.conjProduce, wasCorrect: true, responseTimeMs: 100),
+          shownVerbId: 1,
+        );
+
+        final lexicalCards = await db.select(db.lexicalCardTable).get();
+        expect(lexicalCards, isEmpty);
+      });
+    });
   });
 }

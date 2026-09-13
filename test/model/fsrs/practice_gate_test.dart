@@ -123,5 +123,22 @@ void main() {
       );
       expect(result, isTrue);
     });
+
+    test('preposition is always rejected, even on a mature, non-fresh card (rule 3, §6.3)', () async {
+      final now = DateTime.now().toUtc();
+      final row = await insertCard(
+        state: fsrs.State.review.value,
+        stability: 5,
+        difficulty: 5,
+        lastReview: now.subtract(const Duration(days: 30)).millisecondsSinceEpoch ~/ 1000,
+      );
+
+      final result = await shouldCountPractice(
+        row: row,
+        quizType: QuizType.preposition,
+        healthService: healthService,
+      );
+      expect(result, isFalse);
+    });
   });
 }
