@@ -1,12 +1,12 @@
 import 'package:almi3/core/clock.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/answer_log_codes.dart';
-import 'package:almi3/model/fsrs/card_mapper.dart';
 import 'package:almi3/model/fsrs/card_state.dart';
 import 'package:almi3/model/fsrs/choose_format.dart';
 import 'package:almi3/model/fsrs/grade_answer.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
+import 'package:almi3/model/fsrs/review_persistence.dart';
 import 'package:almi3/model/fsrs/scheduler_provider.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
@@ -15,7 +15,6 @@ import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fsrs/fsrs.dart' as fsrs;
 
 /// A due card_fsrs row joined with its lexical_card row.
 class DueLexicalCard {
@@ -120,26 +119,13 @@ class ScheduledReviewService {
     int rating,
   ) async {
     final scheduler = await ref.read(schedulerProvider.future);
-    final paramsVersion = (await fsrsParamsRepository.getLatest())!.version;
-
-    final beforeCard = cardFsrsRowToLibraryCard(row);
-    final result = scheduler.reviewCard(beforeCard, fsrs.Rating.fromValue(rating));
-    final afterCard = result.card;
-
-    final wasReview = row.state == fsrs.State.review.value;
-    final isLapse = wasReview && rating == ratingAgain;
-
-    final updatedCompanion = libraryCardToCardFsrsCompanion(
-      afterCard,
-      cardType: row.cardType,
-      id: row.id,
-      reps: row.reps + 1,
-      lapses: isLapse ? row.lapses + 1 : row.lapses,
-      createdAt: row.createdAt,
+    return reviewAndPersistCard(
+      scheduler: scheduler,
+      cardFsrsRepository: cardFsrsRepository,
+      fsrsParamsRepository: fsrsParamsRepository,
+      row: row,
+      rating: rating,
     );
-    await cardFsrsRepository.updateCard(updatedCompanion);
-
-    return (companion: updatedCompanion, paramsVersion: paramsVersion);
   }
 
   /// Grades the answer, runs the single legal Scheduler.reviewCard call,

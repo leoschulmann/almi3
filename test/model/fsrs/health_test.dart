@@ -169,5 +169,140 @@ void main() {
       final health = await service.lexemeHealth(999999);
       expect(health, isNull);
     });
+
+    test('lexemeHealthWithBonus adds a bonus on top of base from recent correct practice', () async {
+      final now = DateTime.now().toUtc();
+      final lexemeProgressId = await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 1000,
+        difficulty: 5,
+        lastReview: now.subtract(const Duration(days: 1)).millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      await db.into(db.answerLogTable).insert(
+            AnswerLogTableCompanion.insert(
+              cardId: row.id,
+              answeredAt: now.millisecondsSinceEpoch ~/ 1000,
+              source: 1, // practice
+              countedInFsrs: false,
+              rating: const Value(null),
+              wasCorrect: true,
+              quizType: QuizType.mc2Recognition.value,
+              fsrsParamsVersion: 1,
+            ),
+          );
+
+      final base = await service.lexemeHealth(lexemeProgressId, now: now);
+      final composite = await service.lexemeHealthWithBonus(lexemeProgressId, now: now);
+      expect(composite, greaterThan(base!));
+    });
+
+    test('lexemeHealthWithBonus bonus decays to ~0 after several half-lives', () async {
+      final now = DateTime.now().toUtc();
+      final longAgo = now.subtract(const Duration(days: 30));
+      final lexemeProgressId = await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 1000,
+        difficulty: 5,
+        lastReview: now.subtract(const Duration(days: 1)).millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      await db.into(db.answerLogTable).insert(
+            AnswerLogTableCompanion.insert(
+              cardId: row.id,
+              answeredAt: longAgo.millisecondsSinceEpoch ~/ 1000,
+              source: 1, // practice
+              countedInFsrs: false,
+              rating: const Value(null),
+              wasCorrect: true,
+              quizType: QuizType.mc2Recognition.value,
+              fsrsParamsVersion: 1,
+            ),
+          );
+
+      final base = await service.lexemeHealth(lexemeProgressId, now: now);
+      final composite = await service.lexemeHealthWithBonus(lexemeProgressId, now: now);
+      expect(composite, closeTo(base!, 0.5));
+    });
+
+    test('lexemeHealthWithBonus ignores incorrect and non-practice answer_log rows', () async {
+      final now = DateTime.now().toUtc();
+      final lexemeProgressId = await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 1000,
+        difficulty: 5,
+        lastReview: now.subtract(const Duration(days: 1)).millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      await db.into(db.answerLogTable).insert(
+            AnswerLogTableCompanion.insert(
+              cardId: row.id,
+              answeredAt: now.millisecondsSinceEpoch ~/ 1000,
+              source: 1, // practice
+              countedInFsrs: false,
+              rating: const Value(null),
+              wasCorrect: false, // incorrect -> no bonus
+              quizType: QuizType.mc2Recognition.value,
+              fsrsParamsVersion: 1,
+            ),
+          );
+      await db.into(db.answerLogTable).insert(
+            AnswerLogTableCompanion.insert(
+              cardId: row.id,
+              answeredAt: now.millisecondsSinceEpoch ~/ 1000,
+              source: 0, // scheduled, not practice -> no bonus
+              countedInFsrs: true,
+              rating: const Value(3),
+              wasCorrect: true,
+              quizType: QuizType.mc2Recognition.value,
+              fsrsParamsVersion: 1,
+            ),
+          );
+
+      final base = await service.lexemeHealth(lexemeProgressId, now: now);
+      final composite = await service.lexemeHealthWithBonus(lexemeProgressId, now: now);
+      expect(composite, base);
+    });
+
+    test('lexemeHealthWithBonus saturates and can push health above 100', () async {
+      final now = DateTime.now().toUtc();
+      final lexemeProgressId = await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 1000,
+        difficulty: 5,
+        lastReview: now.subtract(const Duration(days: 1)).millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      for (var i = 0; i < 20; i++) {
+        await db.into(db.answerLogTable).insert(
+              AnswerLogTableCompanion.insert(
+                cardId: row.id,
+                answeredAt: now.millisecondsSinceEpoch ~/ 1000,
+                source: 1,
+                countedInFsrs: false,
+                rating: const Value(null),
+                wasCorrect: true,
+                quizType: QuizType.mc2Recognition.value,
+                fsrsParamsVersion: 1,
+              ),
+            );
+      }
+
+      final composite = await service.lexemeHealthWithBonus(lexemeProgressId, now: now);
+      expect(composite, greaterThan(100));
+      expect(composite, lessThanOrEqualTo(130.0001));
+    });
   });
 }

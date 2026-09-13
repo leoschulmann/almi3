@@ -39,14 +39,24 @@ const int listeningSlowMs = 10000;
 /// over `mc4Recognition` (§5.2 "разнообразие и повторяемость").
 const double reviewListeningWeight = 0.5;
 
-// TODO phase 2+, not wired up yet: gate for whether practice sessions may
-// touch a card, based on retrievability (spec §6.3), ~0.95.
-// const double practiceGateRetrievabilityThreshold = 0.95;
+// Free-practice gate (§6.3) and composite health bonus (§8.3) constants.
+// Rough defaults, not tuned on real data yet.
 
-// TODO phase 2+, not wired up yet: half-life (in days) for the practice
-// bonus decay curve (spec §8.3), ~3.
-// const double practiceBonusHalflifeDays = 3;
+/// Practice gate: a card is "too fresh" to count as a real review when its
+/// retrievability is above this threshold (don't force-review a fresh card).
+const double practiceGateRetrievabilityThreshold = 0.95;
 
-// TODO phase 2+, not wired up yet: saturation cap for the practice bonus
-// (spec §8.3), ~0.30.
-// const double practiceBonusSaturationCap = 0.30;
+/// Half-life (in days) for the practice-bonus decay curve (§8.3): a
+/// practice event's contribution to `raw` decays by half every this many
+/// days.
+const double practiceBonusHalflifeDays = 3;
+
+/// Saturation cap for the practice bonus (§8.3): the bonus can add at most
+/// this much (as a 0..1 fraction) to base health, however many practice
+/// events pile up.
+const double practiceBonusSaturationCap = 0.30;
+
+/// Saturation curve constant (§8.3's `K`) for `bonus = CAP * (1 - exp(-raw/K))`.
+/// Not named explicitly in the spec — chosen so a handful of recent correct
+/// practice events already approach the cap, rather than needing dozens.
+const double practiceBonusK = 1.0;
