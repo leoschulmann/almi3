@@ -69,3 +69,23 @@ enum AppLanguage { en, ru }
 enum AppTheme { light, dark, auto }
 
 enum ReviewIntensity { relaxed, normal, intense }
+
+/// Shared human-readable label for review intensity, used by both
+/// onboarding_page.dart and settings_page.dart -- one source, no second
+/// hardcoded copy. Never surfaces the underlying desired_retention number.
+String intensityLabel(ReviewIntensity v) {
+  switch (v) {
+    case ReviewIntensity.relaxed:
+      return 'Relaxed';
+    case ReviewIntensity.normal:
+      return 'Normal';
+    case ReviewIntensity.intense:
+      return 'Intense';
+  }
+}
+
+/// Reserved sentinel for the single hardcoded debug deck covering all
+/// content, used until real `deck`/`deck_verb` schema exists (§9.1 defers
+/// semantic decks). Negative so it can never collide with a future real
+/// `deck` table PK (which would start at 1 via autoincrement).
+const int kDefaultDeckId = -1;

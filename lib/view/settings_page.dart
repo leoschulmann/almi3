@@ -169,7 +169,7 @@ class _SettingsSheet extends ConsumerWidget {
       _SettingsGroup(children: [
         _DisclosureRow(
           label: 'Review intensity',
-          value: _intensityLabel(s.reviewIntensity),
+          value: intensityLabel(s.reviewIntensity),
           onTap: () => _showIntensityPicker(context, s, n),
         ),
         _ToggleRow(
@@ -305,17 +305,6 @@ class _SettingsSheet extends ConsumerWidget {
     ];
   }
 
-  String _intensityLabel(ReviewIntensity v) {
-    switch (v) {
-      case ReviewIntensity.relaxed:
-        return 'Relaxed';
-      case ReviewIntensity.normal:
-        return 'Normal';
-      case ReviewIntensity.intense:
-        return 'Intense';
-    }
-  }
-
   String _syncSubLabel(DateTime? lastSynced) {
     if (lastSynced == null) return 'Never synced';
     final now = DateTime.now();
@@ -386,9 +375,17 @@ class _SettingsSheet extends ConsumerWidget {
       context,
       title: 'Review intensity',
       current: s.reviewIntensity,
-      options: ReviewIntensity.values.map((v) => (v, _intensityLabel(v))).toList(),
+      options: ReviewIntensity.values.map((v) => (v, intensityLabel(v))).toList(),
     );
-    if (picked != null) n.setReviewIntensity(picked);
+    if (picked == null) return;
+    try {
+      await n.setReviewIntensity(picked);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save review intensity. Please try again.')),
+      );
+    }
   }
 
   Future<void> _showTimePicker(BuildContext context, AppSettings s, SettingsNotifier n) async {
