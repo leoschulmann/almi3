@@ -43,6 +43,15 @@ class LexemeProgressRepository {
     return rows.map((r) => r.read(database.lexemeProgressTable.entityId)!).toList();
   }
 
+  // SELECT id FROM lexeme_progress WHERE entity_type = ?
+  Future<List<int>> getStartedProgressIds(int entityType) async {
+    final rows = await (database.selectOnly(database.lexemeProgressTable)
+          ..addColumns([database.lexemeProgressTable.id])
+          ..where(database.lexemeProgressTable.entityType.equals(entityType)))
+        .get();
+    return rows.map((r) => r.read(database.lexemeProgressTable.id)!).toList();
+  }
+
   // SELECT COUNT(*) FROM lexeme_progress WHERE first_seen_at >= ?
   Future<int> countIntroducedSince(int unixSec) async {
     final countExp = database.lexemeProgressTable.id.count();

@@ -3,14 +3,15 @@ import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/view/practice_stub_page.dart';
 import 'package:almi3/view/session_stub_page.dart';
 import 'package:almi3/viewmodel/home_notifier.dart';
+import 'package:almi3/viewmodel/progress_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Home/dashboard screen (CAP-2): one primary "Учиться" button reading
 /// "N к повторению · M новых" straight from the engine, a secondary
-/// "Тренировка" door, and an empty progress-showcase placeholder slot
-/// (CAP-9, later story -- no data/logic here).
+/// "Тренировка" door, and a progress-showcase widget (CAP-9) reading
+/// [progressStatusProvider].
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -40,9 +41,11 @@ class HomePage extends ConsumerWidget {
                   error: (_, _) => '— к повторению · — новых',
                 ),
                 onTap: () {
-                  Navigator.of(context).push(
-                    adaptivePageRoute(builder: (_) => const SessionStubPage()),
-                  );
+                  Navigator.of(context)
+                      .push(adaptivePageRoute(builder: (_) => const SessionStubPage()))
+                      .then((_) {
+                    if (context.mounted) ref.invalidate(progressStatusProvider);
+                  });
                 },
               ),
 
@@ -50,14 +53,16 @@ class HomePage extends ConsumerWidget {
               _PracticeDoor(
                 onTap: () {
                   HapticFeedback.mediumImpact();
-                  Navigator.of(context).push(
-                    adaptivePageRoute(builder: (_) => const PracticeStubPage()),
-                  );
+                  Navigator.of(context)
+                      .push(adaptivePageRoute(builder: (_) => const PracticeStubPage()))
+                      .then((_) {
+                    if (context.mounted) ref.invalidate(progressStatusProvider);
+                  });
                 },
               ),
 
               const SizedBox(height: 24),
-              const _ProgressShowcasePlaceholder(),
+              const _ProgressShowcase(),
 
               const SizedBox(height: 24),
             ],
@@ -184,13 +189,51 @@ class _PracticeDoor extends StatelessWidget {
   }
 }
 
-/// Empty progress-showcase slot (CAP-9, later story). No data wiring here --
-/// a fixed labeled empty card, per spec boundaries.
-class _ProgressShowcasePlaceholder extends StatelessWidget {
-  const _ProgressShowcasePlaceholder();
+/// Standard Russian 1/2-4/5+ plural-form selection (e.g. n=1 -> [one],
+/// n=2..4 -> [few], n=0/5+/11-14 -> [many]).
+String _pluralizeRu(int n, {required String one, required String few, required String many}) {
+  final mod100 = n % 100;
+  final mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  if (mod10 == 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+}
+
+/// Progress-showcase widget (CAP-9): a health-bucket breakdown ("N крепких
+/// · M слабых", grammatically agreeing with N/M) over started lexemes,
+/// sourced from [progressStatusProvider]. Never shows raw FSRS internals --
+/// only the bucketed presentation.
+class _ProgressShowcase extends ConsumerWidget {
+  const _ProgressShowcase();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progressAsync = ref.watch(progressStatusProvider);
+
+    final text = progressAsync.when(
+      data: (status) {
+        if (status.strongCount == 0 && status.weakCount == 0) {
+          return 'Начните заниматься, чтобы увидеть прогресс';
+        }
+        final strongWord = _pluralizeRu(
+          status.strongCount,
+          one: 'крепкое',
+          few: 'крепких',
+          many: 'крепких',
+        );
+        final weakWord = _pluralizeRu(
+          status.weakCount,
+          one: 'слабое',
+          few: 'слабых',
+          many: 'слабых',
+        );
+        return '${status.strongCount} $strongWord · ${status.weakCount} $weakWord';
+      },
+      loading: () => '...',
+      error: (_, _) => '—',
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
@@ -198,10 +241,10 @@ class _ProgressShowcasePlaceholder extends StatelessWidget {
         color: AppColors.fieldFill,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Center(
+      child: Center(
         child: Text(
-          'Витрина прогресса — скоро',
-          style: TextStyle(fontSize: 13, color: AppColors.inkSecondary),
+          text,
+          style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
         ),
       ),
     );
