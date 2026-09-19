@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'learn_page.dart';
+import 'home_page.dart';
 import 'quiz_page.dart';
 
 /// Resolves whether onboarding is complete, deriving true for installs that
@@ -104,7 +104,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _roots = const [
     RootListPage(),
-    LearnPage(),
+    HomePage(),
     QuizPage(),
   ];
 
@@ -204,7 +204,7 @@ class _CustomBottomNav extends StatelessWidget {
 
   static const _items = [
     (icon: Icons.book, label: 'Browse'),
-    (icon: Icons.school, label: 'Learn'),
+    (icon: Icons.home, label: 'Home'),
     (icon: Icons.quiz, label: 'Quiz'),
   ];
 

@@ -148,7 +148,7 @@ void main() {
 
       // Check for navigation icons instead of text (avoids duplicate text issues)
       expect(find.byIcon(Icons.book), findsOneWidget);
-      expect(find.byIcon(Icons.school), findsOneWidget);
+      expect(find.byIcon(Icons.home), findsOneWidget);
       expect(find.byIcon(Icons.quiz), findsOneWidget);
       expect(find.byIcon(Icons.sync), findsOneWidget);
     });
@@ -171,8 +171,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.sync));
       await tester.pumpAndSettle();
 
-      // Tap on Learn tab
-      await tester.tap(find.byIcon(Icons.school));
+      // Tap on Home tab
+      await tester.tap(find.byIcon(Icons.home));
       await tester.pumpAndSettle();
 
       // Tap on Quiz tab
