@@ -1,3 +1,4 @@
+import '../../model/dto/root_card_stats.dart';
 import '../../model/dto/root_dto.dart';
 
 class RootListPageState {
@@ -8,13 +9,16 @@ class RootListPageState {
   final Set<int> bookmarkedRootIds;
   final Map<int, int> verbCounts;
   final Set<int> toReviewRootIds;
+  final Map<int, RootCardStats> rootStats;
 
   const RootListPageState({this.roots = const [], this.isLoading = false, this.hasMore = true, this.errMsg,
     this.bookmarkedRootIds = const {}, this.verbCounts = const {}, this.toReviewRootIds = const {},
+    this.rootStats = const {},
   });
 
   RootListPageState copyWith({List<RootDto>? roots, bool? isLoading, bool? hasMore, String? errMsg,
-    Set<int>? bookmarkedRootIds, Map<int, int>? verbCounts, Set<int>? toReviewRootIds}) {
+    Set<int>? bookmarkedRootIds, Map<int, int>? verbCounts, Set<int>? toReviewRootIds,
+    Map<int, RootCardStats>? rootStats}) {
     return RootListPageState(
       roots: roots ?? this.roots,
       isLoading: isLoading ?? this.isLoading,
@@ -23,6 +27,7 @@ class RootListPageState {
       bookmarkedRootIds: bookmarkedRootIds ?? this.bookmarkedRootIds,
       verbCounts: verbCounts ?? this.verbCounts,
       toReviewRootIds: toReviewRootIds ?? this.toReviewRootIds,
+      rootStats: rootStats ?? this.rootStats,
     );
   }
 

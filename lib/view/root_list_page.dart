@@ -2,7 +2,6 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/view/settings_page.dart';
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/dto/root_card_stats.dart';
 import 'package:almi3/view/widgets/root_card.dart';
 import 'package:almi3/view/widgets/root_filter_bar.dart';
 import 'package:almi3/view/widgets/root_search_field.dart';
@@ -13,16 +12,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// TODO: remove when word_progress table is wired
-const _mockStats = [
-  null,
-  RootCardStats(verbs: WordTypeStats(total: 12, learned: 4, due: 0)),
-  RootCardStats(verbs: WordTypeStats(total: 8, learned: 8, due: 0), nouns: WordTypeStats(total: 3, learned: 3, due: 0)),
-  RootCardStats(verbs: WordTypeStats(total: 10, learned: 3, due: 2), nouns: WordTypeStats(total: 4, learned: 1, due: 1)),
-  RootCardStats(verbs: WordTypeStats(total: 6, learned: 6, due: 0), nouns: WordTypeStats(total: 2, learned: 2, due: 0), adjs: WordTypeStats(total: 3, learned: 3, due: 0)),
-  RootCardStats(verbs: WordTypeStats(total: 9, learned: 0, due: 0)),
-];
 
 class RootListPage extends ConsumerStatefulWidget {
   const RootListPage({super.key});
@@ -216,7 +205,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
               return RootCard(
                 hebrewText: root.value,
                 isBookmarked: state.isBookmarked(root.id),
-                stats: _mockStats[index % _mockStats.length],
+                stats: state.rootStats[root.id],
                 onTap: () => Navigator.of(context).push(
                   adaptivePageRoute(builder: (_) => WordPage(root: root)),
                 ),
