@@ -13,7 +13,7 @@ import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:almi3/view/home_page.dart';
 import 'package:almi3/view/practice_stub_page.dart';
-import 'package:almi3/view/session_stub_page.dart';
+import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
@@ -122,7 +122,7 @@ void main() {
       await tester.tap(find.text('Учиться'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SessionStubPage), findsOneWidget);
+      expect(find.byType(SessionPage), findsOneWidget);
     });
 
     testWidgets('tapping "Тренировка" navigates to the practice stub', (tester) async {
@@ -163,7 +163,7 @@ void main() {
 
       await tester.tap(find.text('Учиться'));
       await tester.pumpAndSettle();
-      expect(find.byType(SessionStubPage), findsOneWidget);
+      expect(find.byType(SessionPage), findsOneWidget);
 
       // Data appears while the stub page is open (e.g. a session ran).
       final now = nowUtcSeconds();

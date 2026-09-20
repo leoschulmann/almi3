@@ -1,7 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/view/practice_stub_page.dart';
-import 'package:almi3/view/session_stub_page.dart';
+import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/home_notifier.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
 import 'package:flutter/material.dart';
@@ -42,9 +42,12 @@ class HomePage extends ConsumerWidget {
                 ),
                 onTap: () {
                   Navigator.of(context)
-                      .push(adaptivePageRoute(builder: (_) => const SessionStubPage()))
+                      .push(adaptivePageRoute(builder: (_) => const SessionPage()))
                       .then((_) {
-                    if (context.mounted) ref.invalidate(progressStatusProvider);
+                    if (context.mounted) {
+                      ref.invalidate(progressStatusProvider);
+                      ref.invalidate(homeStatusProvider);
+                    }
                   });
                 },
               ),
