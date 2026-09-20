@@ -170,7 +170,7 @@ class _MainNavigationState extends State<MainNavigation> {
           selectedIndex: _selectedIndex,
           browseNavKey: _browseNavKey,
           onTap: (idx) {
-            // Tapping Browse always resets it to RootListPage.
+            // Tapping Roots always resets it to RootListPage.
             if (idx == 0) {
               _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
               setState(() => _browseMode = BrowseMode.allRoots);
@@ -203,9 +203,9 @@ class _CustomBottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    (icon: Icons.book, label: 'Browse'),
-    (icon: Icons.home, label: 'Home'),
-    (icon: Icons.quiz, label: 'Quiz'),
+    (icon: Icons.spa, label: 'Roots'),
+    (icon: Icons.menu_book, label: 'Learn'),
+    (icon: Icons.bolt, label: 'Quiz'),
   ];
 
   @override
