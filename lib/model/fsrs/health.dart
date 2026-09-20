@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:almi3/core/engine_config.dart';
+import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/answer_log_codes.dart';
 import 'package:almi3/model/fsrs/card_mapper.dart';
@@ -103,6 +104,7 @@ class HealthService {
     final result = await _baseAndCardIds(lexemeProgressId, now: now);
     if (result.base == null) return null;
     final bonus = await _practiceBonus(result.cardIds, now: now);
+    logger.d("Health for lexeme id=$lexemeProgressId: ${result.base}; bonus: $bonus");
     return (result.base! + bonus) * 100;
   }
 }

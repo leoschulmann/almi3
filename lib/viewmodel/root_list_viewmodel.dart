@@ -91,12 +91,10 @@ class RootListPageNotifier extends Notifier<RootListPageState> {
       final roots = await _rootRepo.getRootsPaged(_page, _size);
       final bookmarks = await _bookmarkRepo.getBookmarkedIds(BookmarkType.root);
       final rootIds = roots.map((r) => r.id).toList();
-      final verbCounts = await _verbRepo.getVerbCountsByRootIds(rootIds);
       final rootData = await _computeRootData(rootIds);
       state = state.copyWith(
         roots: roots,
         bookmarkedRootIds: bookmarks,
-        verbCounts: verbCounts,
         toReviewRootIds: rootData.toReviewRootIds,
         rootStats: rootData.rootStats,
         isLoading: false,
@@ -115,11 +113,9 @@ class RootListPageNotifier extends Notifier<RootListPageState> {
     try {
       final roots = await _rootRepo.getRootsPaged(_page, _size);
       final rootIds = roots.map((r) => r.id).toList();
-      final newCounts = await _verbRepo.getVerbCountsByRootIds(rootIds);
       final newRootData = await _computeRootData(rootIds);
       state = state.copyWith(
         roots: [...state.roots, ...roots],
-        verbCounts: {...state.verbCounts, ...newCounts},
         toReviewRootIds: {...state.toReviewRootIds, ...newRootData.toReviewRootIds},
         rootStats: {...state.rootStats, ...newRootData.rootStats},
         isLoading: false,

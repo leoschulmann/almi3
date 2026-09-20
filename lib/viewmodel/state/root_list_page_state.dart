@@ -7,17 +7,16 @@ class RootListPageState {
   final bool hasMore;
   final String? errMsg;
   final Set<int> bookmarkedRootIds;
-  final Map<int, int> verbCounts;
   final Set<int> toReviewRootIds;
   final Map<int, RootCardStats> rootStats;
 
   const RootListPageState({this.roots = const [], this.isLoading = false, this.hasMore = true, this.errMsg,
-    this.bookmarkedRootIds = const {}, this.verbCounts = const {}, this.toReviewRootIds = const {},
+    this.bookmarkedRootIds = const {}, this.toReviewRootIds = const {},
     this.rootStats = const {},
   });
 
   RootListPageState copyWith({List<RootDto>? roots, bool? isLoading, bool? hasMore, String? errMsg,
-    Set<int>? bookmarkedRootIds, Map<int, int>? verbCounts, Set<int>? toReviewRootIds,
+    Set<int>? bookmarkedRootIds, Set<int>? toReviewRootIds,
     Map<int, RootCardStats>? rootStats}) {
     return RootListPageState(
       roots: roots ?? this.roots,
@@ -25,13 +24,11 @@ class RootListPageState {
       hasMore: hasMore ?? this.hasMore,
       errMsg: errMsg ?? this.errMsg,
       bookmarkedRootIds: bookmarkedRootIds ?? this.bookmarkedRootIds,
-      verbCounts: verbCounts ?? this.verbCounts,
       toReviewRootIds: toReviewRootIds ?? this.toReviewRootIds,
       rootStats: rootStats ?? this.rootStats,
     );
   }
 
   bool isBookmarked(int rootId) => bookmarkedRootIds.contains(rootId);
-  int verbCount(int rootId) => verbCounts[rootId] ?? 0;
   bool isToReview(int rootId) => toReviewRootIds.contains(rootId);
 }

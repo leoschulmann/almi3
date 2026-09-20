@@ -234,19 +234,6 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     return verbIds;
   }
 
-  // SELECT root_id, COUNT(*) FROM verb_table WHERE root_id IN (?) GROUP BY root_id
-  Future<Map<int, int>> getVerbCountsByRootIds(List<int> rootIds) async {
-    if (rootIds.isEmpty) return {};
-    final rows = await (database.select(database.verbTable)
-          ..where((t) => t.rootId.isIn(rootIds)))
-        .get();
-    final counts = <int, int>{};
-    for (final row in rows) {
-      counts[row.rootId] = (counts[row.rootId] ?? 0) + 1;
-    }
-    return counts;
-  }
-
   // SELECT * FROM verb_table WHERE id NOT IN (?)
   // ORDER BY frequency_rank IS NULL, frequency_rank ASC LIMIT ?
   // TODO(spec §9.2): frequency_rank is nullable until ranking data exists for

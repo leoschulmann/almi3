@@ -7,6 +7,10 @@ void main() {
       expect(heartHealthLevel(null), 0);
     });
 
+    test('NaN health -> na (0), not empty (1)', () {
+      expect(heartHealthLevel(double.nan), 0);
+    });
+
     test('quintile boundaries map to 1..5', () {
       expect(heartHealthLevel(0), 1);
       expect(heartHealthLevel(19.9), 1);
