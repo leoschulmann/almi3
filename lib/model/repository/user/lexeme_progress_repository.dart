@@ -17,6 +17,11 @@ class LexemeProgressRepository {
     return database.into(database.lexemeProgressTable).insert(companion);
   }
 
+  // SELECT * FROM lexeme_progress WHERE id = ?
+  Future<LexemeProgressTableData?> getById(int id) {
+    return (database.select(database.lexemeProgressTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
   // SELECT * FROM lexeme_progress WHERE entity_type = ? AND entity_id = ?
   Future<LexemeProgressTableData?> getByEntity(int entityType, int entityId) {
     return (database.select(database.lexemeProgressTable)
@@ -41,6 +46,20 @@ class LexemeProgressRepository {
           ..where(database.lexemeProgressTable.entityType.equals(entityType)))
         .get();
     return rows.map((r) => r.read(database.lexemeProgressTable.entityId)!).toList();
+  }
+
+  // SELECT id FROM lexeme_progress WHERE entity_type = ?
+  Future<List<int>> getStartedProgressIds(int entityType) async {
+    final rows = await (database.selectOnly(database.lexemeProgressTable)
+          ..addColumns([database.lexemeProgressTable.id])
+          ..where(database.lexemeProgressTable.entityType.equals(entityType)))
+        .get();
+    return rows.map((r) => r.read(database.lexemeProgressTable.id)!).toList();
+  }
+
+  // SELECT * FROM lexeme_progress WHERE status = ?
+  Future<List<LexemeProgressTableData>> getByStatus(int status) {
+    return (database.select(database.lexemeProgressTable)..where((t) => t.status.equals(status))).get();
   }
 
   // SELECT COUNT(*) FROM lexeme_progress WHERE first_seen_at >= ?

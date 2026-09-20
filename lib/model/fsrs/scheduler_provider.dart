@@ -15,7 +15,7 @@ import 'package:fsrs/fsrs.dart' as fsrs;
 double desiredRetentionForIntensity(ReviewIntensity intensity) {
   switch (intensity) {
     case ReviewIntensity.relaxed:
-      return 0.85;
+      return 0.8;
     case ReviewIntensity.normal:
       return 0.9;
     case ReviewIntensity.intense:

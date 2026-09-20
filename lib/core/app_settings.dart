@@ -18,6 +18,7 @@ class AppSettings {
   final bool autoplayAudio;
   final bool wifiOnlyDownloads;
   final DateTime? lastSyncedAt;
+  final bool onboardingComplete;
 
   const AppSettings({
     required this.language,
@@ -35,6 +36,7 @@ class AppSettings {
     required this.autoplayAudio,
     required this.wifiOnlyDownloads,
     required this.lastSyncedAt,
+    required this.onboardingComplete,
   });
 
   AppSettings copyWith({
@@ -54,6 +56,7 @@ class AppSettings {
     bool? wifiOnlyDownloads,
     DateTime? lastSyncedAt,
     bool clearLastSyncedAt = false,
+    bool? onboardingComplete,
   }) {
     return AppSettings(
       language: language ?? this.language,
@@ -71,6 +74,7 @@ class AppSettings {
       autoplayAudio: autoplayAudio ?? this.autoplayAudio,
       wifiOnlyDownloads: wifiOnlyDownloads ?? this.wifiOnlyDownloads,
       lastSyncedAt: clearLastSyncedAt ? null : (lastSyncedAt ?? this.lastSyncedAt),
+      onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
 
@@ -95,6 +99,10 @@ class AppSettings {
       autoplayAudio: true,
       wifiOnlyDownloads: true,
       lastSyncedAt: null,
+      // Default false; app.dart derives true at startup for installs that
+      // already have an fsrs_params row (update without reinstall) before
+      // this pref existed -- see onboardingGateProvider.
+      onboardingComplete: false,
     );
   }
 }

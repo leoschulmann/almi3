@@ -150,4 +150,41 @@ class LexemeStatusActionsService {
   Future<void> unignoreLexeme(int lexemeProgressId) {
     return lexemeProgressRepository.updateStatus(lexemeProgressId, lexemeStatusActive, nowUtcSeconds());
   }
+
+  /// "Вернуть в изучение" on "Известные слова" (§10): resets every card that
+  /// still carries an assertKnown log back to a fresh New card (same
+  /// Card.create()+libraryCardToCardFsrsCompanion pattern as
+  /// introduceLexeme) and deletes those log rows. NOT [undoMarkKnown] --
+  /// no in-memory snapshot is needed, so this works from a screen entered
+  /// long after the session that ran markLexemeKnown is gone. Never touches
+  /// lexeme_progress.status (markLexemeKnown never set it either).
+  Future<void> resetKnownToNew(int lexemeProgressId) async {
+    final lexicalCards = await lexicalCardRepository.getByLexeme(lexemeProgressId);
+    for (final lexicalCard in lexicalCards) {
+      final cardLogs = await answerLogRepository.getByCard(lexicalCard.cardId);
+      final hasAssertKnownLog = cardLogs.any((log) => log.source == answerSourceAssertKnown);
+      if (!hasAssertKnownLog) continue;
+
+      final row = await cardFsrsRepository.getById(lexicalCard.cardId);
+      if (row == null) continue;
+
+      await answerLogRepository.deleteAssertKnownLogsForCard(lexicalCard.cardId);
+
+      final freshCard = await fsrs.Card.create();
+      var companion = libraryCardToCardFsrsCompanion(
+        freshCard,
+        cardType: row.cardType,
+        id: row.id,
+        reps: 0,
+        lapses: 0,
+        createdAt: row.createdAt,
+      );
+      // libraryCardToCardFsrsCompanion leaves lastReview absent when the
+      // library card's lastReview is null (that's correct for its INSERT
+      // callers) -- for this UPDATE it must be forced back to null
+      // explicitly, or the prior review's lastReview would survive untouched.
+      companion = companion.copyWith(lastReview: const Value(null));
+      await cardFsrsRepository.updateCard(companion);
+    }
+  }
 }

@@ -267,6 +267,25 @@ void showAdaptiveToast(BuildContext context, String message) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Undo snackbar -- a plain SnackBar(action:) on both platforms (§10):
+// deliberately NOT routed through showAdaptiveToast (no action-button
+// support there) and NOT iOS-adaptive here, since a bottom action snackbar
+// reads the same on both platforms and this is the one place the app needs
+// an undo affordance.
+
+void showUndoSnackbar(BuildContext context, String message, VoidCallback onUndo) {
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(label: 'Отменить', onPressed: onUndo),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+}
+
 class _IosToast extends StatefulWidget {
   final String message;
   const _IosToast({required this.message});
