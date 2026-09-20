@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/fsrs/lexeme_selection.dart';
+import 'package:almi3/model/fsrs/lexeme_status_actions.dart' show lexemeStatusIgnored;
 import 'package:almi3/model/fsrs/scheduled_review_service.dart';
+import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,4 +40,13 @@ final homeStatusProvider = FutureProvider<HomeStatus>((ref) async {
     logger.e('homeStatusProvider: failed to load due/new counts', error: e, stackTrace: st);
     rethrow;
   }
+});
+
+/// §10's "ненавязчивый счётчик убранных" -- N = COUNT(lexeme_progress WHERE
+/// status=ignored), the single count CAP-8 requires literally (there's no
+/// equivalent counter for "known" -- that door is a plain link, §"Decided").
+final ignoredWordsCountProvider = FutureProvider<int>((ref) async {
+  final lexemeProgressRepository = ref.watch(lexemeProgressRepositoryProvider);
+  final rows = await lexemeProgressRepository.getByStatus(lexemeStatusIgnored);
+  return rows.length;
 });

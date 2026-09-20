@@ -6,6 +6,7 @@ import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/health.dart';
 import 'package:almi3/model/fsrs/lexeme_introduction.dart';
 import 'package:almi3/model/fsrs/lexeme_selection.dart';
+import 'package:almi3/model/fsrs/lexeme_status_actions.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/model/fsrs/scheduled_review_service.dart';
@@ -105,6 +106,24 @@ class AnswerReactionData {
   });
 }
 
+/// Undo data for the most recent "Я знаю"/"Игнорировать" action (§10) --
+/// held on [SessionState] (not local to the notifier method) so the
+/// snackbar's "Отменить" action, fired from the widget after `_advance()`
+/// already moved the queue on, still has what it needs.
+sealed class PendingUndo {
+  const PendingUndo();
+}
+
+class PendingKnownUndo extends PendingUndo {
+  final MarkKnownResult result;
+  const PendingKnownUndo(this.result);
+}
+
+class PendingIgnoreUndo extends PendingUndo {
+  final int lexemeProgressId;
+  const PendingIgnoreUndo(this.lexemeProgressId);
+}
+
 class SessionState {
   final SessionPhase phase;
   final List<SessionItem> queue;
@@ -113,6 +132,7 @@ class SessionState {
   final VerbDetailDto? currentVerb;
   final List<String> quizOptions;
   final String? errorMessage;
+  final PendingUndo? pendingUndo;
 
   const SessionState({
     required this.phase,
@@ -122,6 +142,7 @@ class SessionState {
     this.currentVerb,
     this.quizOptions = const [],
     this.errorMessage,
+    this.pendingUndo,
   });
 
   const SessionState.initial() : this(phase: SessionPhase.loading, queue: const [], index: 0);
@@ -138,6 +159,8 @@ class SessionState {
     bool clearCurrentVerb = false,
     List<String>? quizOptions,
     String? errorMessage,
+    PendingUndo? pendingUndo,
+    bool clearPendingUndo = false,
   }) {
     return SessionState(
       phase: phase ?? this.phase,
@@ -147,6 +170,7 @@ class SessionState {
       currentVerb: clearCurrentVerb ? null : (currentVerb ?? this.currentVerb),
       quizOptions: quizOptions ?? (clearCurrentVerb ? const [] : this.quizOptions),
       errorMessage: errorMessage ?? this.errorMessage,
+      pendingUndo: clearPendingUndo ? null : (pendingUndo ?? this.pendingUndo),
     );
   }
 }
@@ -193,6 +217,9 @@ class SessionNotifier extends Notifier<SessionState> {
       for (final due in dueCards) {
         final progress = await lexemeProgressRepository.getById(due.lexicalCardRow.lexemeProgressId);
         if (progress == null) continue; // orphaned row (shouldn't happen); skip defensively
+        // §10: an ignored/known lexeme's card can still be raw-"due" (New
+        // cards default due=now) -- never resurface it as a live quiz item.
+        if (progress.status != lexemeStatusActive) continue;
 
         // chooseFormat (frozen) is called as-is, then narrowed in this
         // session layer -- never inside choose_format.dart.
@@ -396,6 +423,90 @@ class SessionNotifier extends Notifier<SessionState> {
       state = state.copyWith(phase: SessionPhase.error, errorMessage: e.toString());
     } finally {
       _busy = false;
+    }
+  }
+
+  /// "Я знаю" (§10): introduces the lexeme (same as "Понятно" would have),
+  /// then runs the single legal Easy review via
+  /// LexemeStatusActionsService.markLexemeKnown. Stashes the undo snapshot
+  /// on state for the snackbar, then advances like completeIntroduction.
+  Future<void> completeKnown() async {
+    final item = state.currentItem;
+    if (item is! SessionNewItem) return;
+    if (_busy) return;
+    _busy = true;
+    try {
+      final introductionService = ref.read(lexemeIntroductionServiceProvider);
+      final statusActionsService = ref.read(lexemeStatusActionsServiceProvider);
+      final lexemeProgressId = await introductionService.introduceLexeme(item.entityType, item.entityId);
+      final result = await statusActionsService.markLexemeKnown(lexemeProgressId);
+      state = state.copyWith(
+        pendingUndo: result != null ? PendingKnownUndo(result) : null,
+        clearPendingUndo: result == null,
+      );
+      await _advance();
+    } catch (e, st) {
+      logger.e('SessionNotifier.completeKnown: failed to mark lexeme known', error: e, stackTrace: st);
+      state = state.copyWith(phase: SessionPhase.error, errorMessage: e.toString());
+    } finally {
+      _busy = false;
+    }
+  }
+
+  /// "Игнорировать" (§10): introduces the lexeme (needed so a lexeme_progress
+  /// row exists to flag), then flips status via
+  /// LexemeStatusActionsService.ignoreLexeme -- never touches FSRS. Stashes
+  /// undo data for the snackbar, then advances like completeIntroduction.
+  Future<void> completeIgnore() async {
+    final item = state.currentItem;
+    if (item is! SessionNewItem) return;
+    if (_busy) return;
+    _busy = true;
+    try {
+      final introductionService = ref.read(lexemeIntroductionServiceProvider);
+      final statusActionsService = ref.read(lexemeStatusActionsServiceProvider);
+      final lexemeProgressId = await introductionService.introduceLexeme(item.entityType, item.entityId);
+      await statusActionsService.ignoreLexeme(lexemeProgressId);
+      state = state.copyWith(pendingUndo: PendingIgnoreUndo(lexemeProgressId));
+      await _advance();
+    } catch (e, st) {
+      logger.e('SessionNotifier.completeIgnore: failed to ignore lexeme', error: e, stackTrace: st);
+      state = state.copyWith(phase: SessionPhase.error, errorMessage: e.toString());
+    } finally {
+      _busy = false;
+    }
+  }
+
+  /// The snackbar's "Отменить" action (§10): dispatches to the matching
+  /// rollback (undoMarkKnown deletes the one log + restores the exact prior
+  /// card_fsrs snapshot; unignoreLexeme just flips the flag back), then
+  /// clears the pending-undo slot so a second tap is a no-op.
+  Future<void> undoLastAction() async {
+    final pending = state.pendingUndo;
+    if (pending == null) return;
+    if (_busy) return;
+    _busy = true;
+    try {
+      final statusActionsService = ref.read(lexemeStatusActionsServiceProvider);
+      switch (pending) {
+        case PendingKnownUndo(:final result):
+          await statusActionsService.undoMarkKnown(result);
+        case PendingIgnoreUndo(:final lexemeProgressId):
+          await statusActionsService.unignoreLexeme(lexemeProgressId);
+      }
+      state = state.copyWith(clearPendingUndo: true);
+    } finally {
+      _busy = false;
+    }
+  }
+
+  /// Auto-clear for the undo window's timeout (§10): called by the widget's
+  /// timer, matching the snackbar's shown duration. Only clears if the slot
+  /// still holds the exact same instance -- a later action's still-fresh
+  /// undo data must never be wiped by a stale timer from an earlier one.
+  void clearPendingUndoIfUnchanged(PendingUndo expected) {
+    if (identical(state.pendingUndo, expected)) {
+      state = state.copyWith(clearPendingUndo: true);
     }
   }
 

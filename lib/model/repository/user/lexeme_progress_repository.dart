@@ -57,6 +57,11 @@ class LexemeProgressRepository {
     return rows.map((r) => r.read(database.lexemeProgressTable.id)!).toList();
   }
 
+  // SELECT * FROM lexeme_progress WHERE status = ?
+  Future<List<LexemeProgressTableData>> getByStatus(int status) {
+    return (database.select(database.lexemeProgressTable)..where((t) => t.status.equals(status))).get();
+  }
+
   // SELECT COUNT(*) FROM lexeme_progress WHERE first_seen_at >= ?
   Future<int> countIntroducedSince(int unixSec) async {
     final countExp = database.lexemeProgressTable.id.count();

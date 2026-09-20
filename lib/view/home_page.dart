@@ -1,5 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/view/ignored_words_page.dart';
+import 'package:almi3/view/known_words_page.dart';
 import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/home_notifier.dart';
@@ -47,6 +49,10 @@ class HomePage extends ConsumerWidget {
                     if (context.mounted) {
                       ref.invalidate(progressStatusProvider);
                       ref.invalidate(homeStatusProvider);
+                      // §10: a session can ignore/un-ignore a word (the two
+                      // introduction-screen buttons), which must refresh the
+                      // "Убрано: N" counter too, same as the other two.
+                      ref.invalidate(ignoredWordsCountProvider);
                     }
                   });
                 },
@@ -66,6 +72,9 @@ class HomePage extends ConsumerWidget {
 
               const SizedBox(height: 24),
               const _ProgressShowcase(),
+
+              const SizedBox(height: 16),
+              const _StatusLinksSection(),
 
               const SizedBox(height: 24),
             ],
@@ -187,6 +196,82 @@ class _PracticeDoor extends StatelessWidget {
           ],
         ),
       ),
+      ),
+    );
+  }
+}
+
+/// §10 entry point: a compact "Убрано: N" counter (the single counter
+/// CAP-8 requires literally) leading to "Убранные слова", plus a plain
+/// link (no counter, §"Decided") to "Известные слова".
+class _StatusLinksSection extends ConsumerWidget {
+  const _StatusLinksSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ignoredCountAsync = ref.watch(ignoredWordsCountProvider);
+    final ignoredLabel = ignoredCountAsync.when(
+      data: (count) => 'Убрано: $count',
+      loading: () => 'Убрано: …',
+      error: (_, _) => 'Убрано: —',
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: _StatusLinkTile(
+            label: ignoredLabel,
+            onTap: () {
+              Navigator.of(context)
+                  .push(adaptivePageRoute(builder: (_) => const IgnoredWordsPage()))
+                  .then((_) {
+                if (context.mounted) ref.invalidate(ignoredWordsCountProvider);
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatusLinkTile(
+            label: 'Известные слова',
+            onTap: () {
+              Navigator.of(context).push(adaptivePageRoute(builder: (_) => const KnownWordsPage()));
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusLinkTile extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _StatusLinkTile({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.hairline),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
+          ),
+        ),
       ),
     );
   }

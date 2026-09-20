@@ -453,6 +453,120 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
     });
 
+    testWidgets('"Я знаю" grades an Easy review and shows the undo snackbar (matrix: "Я знаю")', (tester) async {
+      await _insertVerb(contentDb, id: 120, value: 'הבין', translation: 'to understand');
+
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Я знаю'));
+      await tester.pumpAndSettle();
+
+      final logs = await userDb.select(userDb.answerLogTable).get();
+      expect(logs, hasLength(1));
+      expect(logs.single.rating, 4); // Easy
+
+      expect(find.text('Отменить'), findsOneWidget);
+
+      // Flush the undo-window auto-clear timer so it doesn't leak past
+      // this test's teardown.
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('undo snackbar after "Я знаю" restores the card and deletes the log (matrix: "Undo после Я знаю")', (tester) async {
+      await _insertVerb(contentDb, id: 121, value: 'זכר', translation: 'to remember');
+
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Я знаю'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Отменить'));
+      await tester.pumpAndSettle();
+
+      final logs = await userDb.select(userDb.answerLogTable).get();
+      expect(logs, isEmpty);
+
+      // Flush the undo-window auto-clear timer (already a no-op by now,
+      // since undo already cleared pendingUndo) so it doesn't leak past
+      // this test's teardown.
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('"Игнорировать" flags the lexeme and shows the undo snackbar (matrix: "Игнорировать")', (tester) async {
+      await _insertVerb(contentDb, id: 122, value: 'שאל', translation: 'to ask');
+
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Игнорировать'));
+      await tester.pumpAndSettle();
+
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress.single.status, 2); // ignored
+      expect(find.text('Отменить'), findsOneWidget);
+
+      // Flush the undo-window auto-clear timer so it doesn't leak past
+      // this test's teardown.
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('undo snackbar after "Игнорировать" flips status back to active (matrix: "Undo после Игнорировать")', (tester) async {
+      await _insertVerb(contentDb, id: 123, value: 'ענה', translation: 'to answer');
+
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Игнорировать'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Отменить'));
+      await tester.pumpAndSettle();
+
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress.single.status, 0); // active
+
+      // Flush the undo-window auto-clear timer (already a no-op by now,
+      // since undo already cleared pendingUndo) so it doesn't leak past
+      // this test's teardown.
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('"Я знаю" on the LAST item defers the auto-pop while the undo window is open', (tester) async {
+      await _insertVerb(contentDb, id: 124, value: 'בדק', translation: 'to check');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userDbProvider.overrideWithValue(userDb),
+            appDatabaseProvider.overrideWithValue(contentDb),
+            settingsProvider.overrideWith(() => _SettingsNotifier(AppSettings.defaultSettings())),
+          ],
+          child: const MaterialApp(home: HomePage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Учиться'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SessionPage), findsOneWidget);
+
+      await tester.tap(find.text('Я знаю'));
+      await tester.pumpAndSettle();
+
+      // The queue is exhausted (single item), but the auto-pop must be
+      // deferred while the undo snackbar's window is still open.
+      expect(find.byType(SessionPage), findsOneWidget);
+      expect(find.text('Отменить'), findsOneWidget);
+
+      // Advancing past the undo window's timeout lets the deferred pop fire.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(find.byType(SessionPage), findsNothing);
+      expect(find.byType(HomePage), findsOneWidget);
+    });
+
     testWidgets(
       'pushed from HomePage: completing the queue pops back and refreshes home/progress status',
       (tester) async {

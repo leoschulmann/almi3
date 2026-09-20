@@ -9,8 +9,16 @@ import 'package:flutter/services.dart';
 class IntroductionCard extends StatefulWidget {
   final VerbDetailDto? verb;
   final VoidCallback onContinue;
+  final VoidCallback onKnown;
+  final VoidCallback onIgnore;
 
-  const IntroductionCard({super.key, required this.verb, required this.onContinue});
+  const IntroductionCard({
+    super.key,
+    required this.verb,
+    required this.onContinue,
+    required this.onKnown,
+    required this.onIgnore,
+  });
 
   @override
   State<IntroductionCard> createState() => _IntroductionCardState();
@@ -92,7 +100,54 @@ class _IntroductionCardState extends State<IntroductionCard> with SingleTickerPr
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _SecondaryAction(label: 'Я знаю', onTap: widget.onKnown)),
+            const SizedBox(width: 12),
+            Expanded(child: _SecondaryAction(label: 'Игнорировать', onTap: widget.onIgnore)),
+          ],
+        ),
       ],
+    );
+  }
+}
+
+/// "Я знаю"/"Игнорировать" -- secondary status actions on the introduction
+/// screen (§10). Plain tap (not long-press), haptic only, no scale-pulse:
+/// these are one-shot decisions on a screen the user leaves immediately
+/// after, not a toggle worth the extra flourish.
+class _SecondaryAction extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _SecondaryAction({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.hairline),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

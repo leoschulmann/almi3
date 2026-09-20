@@ -9,6 +9,7 @@ import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fsrs/fsrs.dart' as fsrs;
 
 class _FixedSettingsNotifier extends SettingsNotifier {
   @override
@@ -130,6 +131,50 @@ void main() {
       expect(logs, isEmpty);
       final cardRow = (await db.select(db.cardFsrsTable).get()).single;
       expect(cardRow.reps, 0);
+    });
+
+    group('resetKnownToNew', () {
+      test('resets an assertKnown card back to fresh New and deletes the log (matrix: "Вернуть" on "Известные слова")', () async {
+        final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+        final markResult = await service.markLexemeKnown(lexemeProgressId);
+        expect(markResult, isNotNull);
+
+        await service.resetKnownToNew(lexemeProgressId);
+
+        final logs = await db.select(db.answerLogTable).get();
+        expect(logs, isEmpty);
+
+        final cardRow = (await db.select(db.cardFsrsTable).get()).firstWhere((r) => r.id == markResult!.cardId);
+        expect(cardRow.reps, 0);
+        expect(cardRow.lapses, 0);
+        expect(cardRow.stability, isNull);
+        expect(cardRow.difficulty, isNull);
+        expect(cardRow.lastReview, isNull);
+        expect(cardRow.state, fsrs.State.learning.value); // fresh Card.create() default
+      });
+
+      test('is a no-op when the lexeme has no assertKnown log', () async {
+        final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+        final beforeRow = (await db.select(db.cardFsrsTable).get()).single;
+
+        await service.resetKnownToNew(lexemeProgressId);
+
+        final afterRow = (await db.select(db.cardFsrsTable).get()).single;
+        expect(afterRow.reps, beforeRow.reps);
+        expect(afterRow.lastReview, beforeRow.lastReview);
+        final logs = await db.select(db.answerLogTable).get();
+        expect(logs, isEmpty);
+      });
+
+      test('does not touch lexeme_progress.status (§10: not modeled there)', () async {
+        final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+        await service.markLexemeKnown(lexemeProgressId);
+
+        await service.resetKnownToNew(lexemeProgressId);
+
+        final progress = (await db.select(db.lexemeProgressTable).get()).single;
+        expect(progress.status, lexemeStatusActive);
+      });
     });
   });
 }

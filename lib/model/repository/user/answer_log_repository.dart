@@ -1,5 +1,6 @@
 import 'package:almi3/model/db/db_providers.dart';
 import 'package:almi3/model/db/user_db.dart';
+import 'package:almi3/model/fsrs/answer_log_codes.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,6 +29,33 @@ class AnswerLogRepository {
   // DELETE FROM answer_log WHERE id = ?
   Future<void> deleteById(int id) {
     return (database.delete(database.answerLogTable)..where((t) => t.id.equals(id))).go();
+  }
+
+  // SELECT DISTINCT lc.lexeme_progress_id
+  // FROM answer_log al JOIN lexical_card lc ON lc.card_id = al.card_id
+  // WHERE al.source = <assertKnown>
+  //
+  // §10 "Известные слова" list: a lexeme belongs there iff at least one of
+  // its cards still carries an assertKnown log row (undone via
+  // resetKnownToNew, not undoMarkKnown -- that in-memory snapshot doesn't
+  // survive to a separate screen).
+  Future<Set<int>> getLexemeProgressIdsWithAssertKnownLog() async {
+    final query = database.select(database.answerLogTable).join([
+      innerJoin(
+        database.lexicalCardTable,
+        database.lexicalCardTable.cardId.equalsExp(database.answerLogTable.cardId),
+      ),
+    ])
+      ..where(database.answerLogTable.source.equals(answerSourceAssertKnown));
+    final rows = await query.get();
+    return rows.map((r) => r.readTable(database.lexicalCardTable).lexemeProgressId).toSet();
+  }
+
+  // DELETE FROM answer_log WHERE card_id = ? AND source = <assertKnown>
+  Future<void> deleteAssertKnownLogsForCard(int cardId) {
+    return (database.delete(database.answerLogTable)
+          ..where((t) => t.cardId.equals(cardId) & t.source.equals(answerSourceAssertKnown)))
+        .go();
   }
 
   // SELECT * FROM answer_log WHERE source = ? AND state_before IN (?)

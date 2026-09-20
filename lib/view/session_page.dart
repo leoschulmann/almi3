@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
@@ -22,8 +24,34 @@ class SessionPage extends ConsumerStatefulWidget {
   ConsumerState<SessionPage> createState() => _SessionPageState();
 }
 
+/// How long the undo snackbar stays up (§10, "неск. секунд") -- also the
+/// auto-clear deadline for `pendingUndo`, so a queue-exhausting "Я
+/// знаю"/"Игнорировать" on the LAST item still lets the session exit on its
+/// own if the user never taps "Отменить" (matches [showUndoSnackbar]'s
+/// `SnackBar.duration`).
+const Duration _undoWindow = Duration(seconds: 4);
+
 class _SessionPageState extends ConsumerState<SessionPage> {
   bool _popped = false;
+
+  /// Queue exhaustion (§11, boundaries): pop back to HomePage once no undo
+  /// window is pending. Gated on `pendingUndo == null` so a "Я знаю"/
+  /// "Игнорировать" on the LAST queue item -- which reaches `phase:
+  /// complete` and a fresh `pendingUndo` in the same notifier call, before
+  /// this listener ever runs -- doesn't get its Undo snackbar cut short by
+  /// an immediate pop. Re-checked on every state change, so it also fires
+  /// once `pendingUndo` later clears (via undo tap or [_undoWindow] timeout)
+  /// while `phase` is still `complete`.
+  void _maybeAutoPop(BuildContext context, SessionState next) {
+    if (next.phase == SessionPhase.complete && next.pendingUndo == null && !_popped) {
+      _popped = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,12 +61,25 @@ class _SessionPageState extends ConsumerState<SessionPage> {
       // Queue exhaustion (§11, boundaries): pop back to HomePage, whose
       // existing invalidation-on-return already refreshes due/new counts
       // and the progress showcase -- no new wiring needed there.
-      if (next.phase == SessionPhase.complete && !_popped) {
-        _popped = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
+      _maybeAutoPop(context, next);
+
+      // Undo-snackbar (§10): fires whenever the pending-undo slot goes from
+      // unoccupied to occupied. Identity, not `==` -- these PendingUndo
+      // subclasses don't override equality, so `!=` would already be true
+      // for two structurally-identical-looking instances; identity is used
+      // here for clarity/intent (this IS the "did the slot's occupant
+      // change" check), not to work around a false-equality bug.
+      if (next.pendingUndo != null && !identical(next.pendingUndo, previous?.pendingUndo)) {
+        final pendingUndo = next.pendingUndo!;
+        final message = pendingUndo is PendingKnownUndo ? 'Отмечено как известное' : 'Убрано из изучения';
+        showUndoSnackbar(
+          context,
+          message,
+          () => ref.read(sessionNotifierProvider.notifier).undoLastAction(),
+        );
+        Timer(_undoWindow, () {
+          if (!mounted) return;
+          ref.read(sessionNotifierProvider.notifier).clearPendingUndoIfUnchanged(pendingUndo);
         });
       }
     });
@@ -105,6 +146,8 @@ class _SessionPageState extends ConsumerState<SessionPage> {
           return IntroductionCard(
             verb: state.currentVerb,
             onContinue: () => ref.read(sessionNotifierProvider.notifier).completeIntroduction(),
+            onKnown: () => ref.read(sessionNotifierProvider.notifier).completeKnown(),
+            onIgnore: () => ref.read(sessionNotifierProvider.notifier).completeIgnore(),
           );
         }
 

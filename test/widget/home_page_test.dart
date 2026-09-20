@@ -12,6 +12,8 @@ import 'package:almi3/model/repository/user/conjugation_card_repository.dart';
 import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:almi3/view/home_page.dart';
+import 'package:almi3/view/ignored_words_page.dart';
+import 'package:almi3/view/known_words_page.dart';
 import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
@@ -23,6 +25,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
+
+Future<void> _seedRootAndBinyan(VocabularyDatabase db) async {
+  await db.into(db.rootTable).insert(RootTableCompanion.insert(id: const Value(1), value: 'כתב', version: 1));
+  await db.into(db.binyanTable).insert(BinyanTableCompanion.insert(id: const Value(1), value: 'פעל', version: 1));
+}
+
+Future<void> _insertVerb(VocabularyDatabase db, {required int id, required String value, required String translation}) async {
+  await db.into(db.verbTable).insert(VerbTableCompanion.insert(id: Value(id), value: value, version: 1, rootId: 1, binyanId: 1));
+  await db.into(db.verbTranslationTable).insert(
+        VerbTranslationTableCompanion.insert(id: Value(id * 100), value: translation, version: 1, lang: 'EN', verbId: id),
+      );
+}
 
 /// Inserts a lexeme_progress row plus a card_fsrs + lexical_card row so
 /// HealthService.lexemeHealth has something to compute over.
@@ -208,6 +222,60 @@ void main() {
       expect(allText.contains('retention'), isFalse);
       expect(allText.contains('stability'), isFalse);
       expect(allText.contains('interval'), isFalse);
+    });
+
+    testWidgets('shows the ignored-count entry point and the known-words link (matrix: "N убранных слов")', (tester) async {
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Убрано: 0'), findsOneWidget);
+      expect(find.text('Известные слова'), findsOneWidget);
+    });
+
+    testWidgets('tapping the ignored-count entry point navigates to IgnoredWordsPage', (tester) async {
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Убрано: 0'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(IgnoredWordsPage), findsOneWidget);
+    });
+
+    testWidgets('tapping "Известные слова" navigates to KnownWordsPage', (tester) async {
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Известные слова'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(KnownWordsPage), findsOneWidget);
+    });
+
+    testWidgets('ignoring a word from inside a session refreshes the "Убрано: N" counter on return', (tester) async {
+      await _seedRootAndBinyan(contentDb);
+      await _insertVerb(contentDb, id: 900, value: 'נשך', translation: 'to bite');
+
+      await tester.pumpWidget(harness());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Убрано: 0'), findsOneWidget);
+
+      await tester.tap(find.text('Учиться'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SessionPage), findsOneWidget);
+
+      await tester.tap(find.text('Игнорировать'));
+      await tester.pumpAndSettle();
+
+      // Single-item queue exhausted -- let the undo window's timeout elapse
+      // so SessionPage auto-pops back to HomePage.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomePage), findsOneWidget);
+      expect(find.byType(SessionPage), findsNothing);
+      expect(find.text('Убрано: 1'), findsOneWidget);
     });
 
     testWidgets('renders the em-dash fallback status text when homeStatusProvider errors', (tester) async {

@@ -145,6 +145,7 @@ Future<int> _insertDueCard(
   required int verbId,
   required int direction,
   int? due,
+  int status = 0,
 }) async {
   final now = nowUtcSeconds();
   final cardId = await db.into(db.cardFsrsTable).insert(
@@ -164,7 +165,7 @@ Future<int> _insertDueCard(
         LexemeProgressTableCompanion.insert(
           entityType: 0,
           entityId: verbId,
-          status: 0,
+          status: status,
           createdAt: 1000,
           updatedAt: 1000,
         ),
@@ -603,6 +604,104 @@ void main() {
       expect(state.phase, SessionPhase.ready);
       expect(state.queue, hasLength(5));
       expect(state.currentVerb, isNotNull);
+    });
+
+    test('an ignored lexeme\'s card never resurfaces as a due item in a freshly-loaded queue', () async {
+      await _insertVerb(contentDb, id: 130, value: 'סגר', translation: 'to close');
+      // status=lexemeStatusIgnored (2): New card_fsrs defaults due=now, so
+      // it's raw-"due" by card_fsrs.due alone -- _load() must still skip it.
+      await _insertDueCard(userDb, verbId: 130, direction: directionRecognition, status: 2);
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 0));
+      addTearDown(container.dispose);
+
+      final state = await _settle(container);
+      expect(state.phase, SessionPhase.empty);
+      expect(state.queue, isEmpty);
+    });
+
+    test('completeKnown: one Easy review + undo data stashed, queue advances (matrix: "Я знаю")', () async {
+      await _insertVerb(contentDb, id: 110, value: 'שלח', translation: 'to send');
+
+      final container = buildContainer();
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final notifier = container.read(sessionNotifierProvider.notifier);
+      await notifier.completeKnown();
+
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress, hasLength(1));
+      expect(progress.single.entityId, 110);
+
+      final logs = await userDb.select(userDb.answerLogTable).get();
+      expect(logs, hasLength(1));
+      expect(logs.single.rating, 4); // Easy
+
+      expect(container.read(sessionNotifierProvider).pendingUndo, isA<PendingKnownUndo>());
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.complete);
+    });
+
+    test('undoLastAction after completeKnown deletes the log and restores the card to New (matrix: "Undo после Я знаю")', () async {
+      await _insertVerb(contentDb, id: 111, value: 'סלח', translation: 'to forgive');
+
+      final container = buildContainer();
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final notifier = container.read(sessionNotifierProvider.notifier);
+      await notifier.completeKnown();
+      // markLexemeKnown graduates recognition straight to Review, which
+      // spawns a second (production) card_fsrs row (§3.3) -- pin down the
+      // reviewed card's id before undo deletes the log that would
+      // otherwise let us find it again.
+      final pending = container.read(sessionNotifierProvider).pendingUndo as PendingKnownUndo;
+      final reviewedCardId = pending.result.cardId;
+      await notifier.undoLastAction();
+
+      final logs = await userDb.select(userDb.answerLogTable).get();
+      expect(logs, isEmpty);
+      final cardRow =
+          (await userDb.select(userDb.cardFsrsTable).get()).firstWhere((r) => r.id == reviewedCardId);
+      expect(cardRow.reps, 0);
+      expect(cardRow.lastReview, null);
+      expect(container.read(sessionNotifierProvider).pendingUndo, null);
+    });
+
+    test('completeIgnore: status flips to ignored, undo data stashed, no FSRS writes (matrix: "Игнорировать")', () async {
+      await _insertVerb(contentDb, id: 112, value: 'מכר', translation: 'to sell');
+
+      final container = buildContainer();
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final notifier = container.read(sessionNotifierProvider.notifier);
+      await notifier.completeIgnore();
+
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress, hasLength(1));
+      expect(progress.single.status, 2); // lexemeStatusIgnored
+
+      final logs = await userDb.select(userDb.answerLogTable).get();
+      expect(logs, isEmpty);
+
+      expect(container.read(sessionNotifierProvider).pendingUndo, isA<PendingIgnoreUndo>());
+    });
+
+    test('undoLastAction after completeIgnore flips status back to active (matrix: "Undo после Игнорировать")', () async {
+      await _insertVerb(contentDb, id: 113, value: 'קנה', translation: 'to buy');
+
+      final container = buildContainer();
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final notifier = container.read(sessionNotifierProvider.notifier);
+      await notifier.completeIgnore();
+      await notifier.undoLastAction();
+
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress.single.status, 0); // active
+      expect(container.read(sessionNotifierProvider).pendingUndo, null);
     });
 
     test('error path: due-queue failure surfaces as phase error, not a crash', () async {
