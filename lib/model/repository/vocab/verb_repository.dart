@@ -221,6 +221,19 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     return row.read(countExp) ?? 0;
   }
 
+  // SELECT id, root_id FROM verb_table WHERE root_id IN (?)
+  Future<Map<int, List<int>>> getVerbIdsByRootIds(List<int> rootIds) async {
+    if (rootIds.isEmpty) return {};
+    final rows = await (database.select(database.verbTable)
+          ..where((t) => t.rootId.isIn(rootIds)))
+        .get();
+    final verbIds = <int, List<int>>{};
+    for (final row in rows) {
+      verbIds.putIfAbsent(row.rootId, () => []).add(row.id);
+    }
+    return verbIds;
+  }
+
   // SELECT root_id, COUNT(*) FROM verb_table WHERE root_id IN (?) GROUP BY root_id
   Future<Map<int, int>> getVerbCountsByRootIds(List<int> rootIds) async {
     if (rootIds.isEmpty) return {};

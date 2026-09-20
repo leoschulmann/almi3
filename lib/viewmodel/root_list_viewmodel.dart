@@ -1,5 +1,9 @@
+import 'package:almi3/core/clock.dart';
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/model/fsrs/lexeme_introduction.dart' show lexemeStatusActive;
+import 'package:almi3/model/fsrs/lexeme_selection.dart' show entityTypeVerb;
 import 'package:almi3/model/repository/user/bookmark_repository.dart';
+import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:almi3/model/repository/vocab/root_repository.dart';
 import 'package:almi3/model/repository/vocab/verb_repository.dart';
 import 'package:almi3/viewmodel/state/root_list_page_state.dart';
@@ -15,6 +19,7 @@ class RootListPageNotifier extends Notifier<RootListPageState> {
   late RootRepository _rootRepo;
   late BookmarkRepository _bookmarkRepo;
   late VerbRepository _verbRepo;
+  late LexicalCardRepository _lexicalCardRepo;
   int _page = 0;
   static const int _size = 20;
 
@@ -23,9 +28,27 @@ class RootListPageNotifier extends Notifier<RootListPageState> {
     _rootRepo = ref.watch(rootRepositoryProvider);
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
     _verbRepo = ref.watch(verbRepositoryProvider);
+    _lexicalCardRepo = ref.watch(lexicalCardRepositoryProvider);
     ref.watch(syncCounterProvider);
     Future.microtask(() => _loadInit());
     return const RootListPageState();
+  }
+
+  // Root ids (from rootIds) that have at least one verb with a due card,
+  // joining vocab.db's verb_table to user.db's lexeme_progress by soft-ref
+  // entity id (no FK between the two databases).
+  Future<Set<int>> _toReviewRootIds(List<int> rootIds) async {
+    final verbIdsByRoot = await _verbRepo.getVerbIdsByRootIds(rootIds);
+    final dueVerbIds = await _lexicalCardRepo.getDueEntityIds(
+      entityType: entityTypeVerb,
+      statuses: const [lexemeStatusActive],
+      nowUnixSec: nowUtcSeconds(),
+    );
+    final result = <int>{};
+    for (final entry in verbIdsByRoot.entries) {
+      if (entry.value.any(dueVerbIds.contains)) result.add(entry.key);
+    }
+    return result;
   }
 
   Future<void> _loadInit() async {
@@ -35,10 +58,12 @@ class RootListPageNotifier extends Notifier<RootListPageState> {
       final bookmarks = await _bookmarkRepo.getBookmarkedIds(BookmarkType.root);
       final rootIds = roots.map((r) => r.id).toList();
       final verbCounts = await _verbRepo.getVerbCountsByRootIds(rootIds);
+      final toReviewRootIds = await _toReviewRootIds(rootIds);
       state = state.copyWith(
         roots: roots,
         bookmarkedRootIds: bookmarks,
         verbCounts: verbCounts,
+        toReviewRootIds: toReviewRootIds,
         isLoading: false,
         hasMore: roots.length == _size,
       );
@@ -56,9 +81,11 @@ class RootListPageNotifier extends Notifier<RootListPageState> {
       final roots = await _rootRepo.getRootsPaged(_page, _size);
       final rootIds = roots.map((r) => r.id).toList();
       final newCounts = await _verbRepo.getVerbCountsByRootIds(rootIds);
+      final newToReviewRootIds = await _toReviewRootIds(rootIds);
       state = state.copyWith(
         roots: [...state.roots, ...roots],
         verbCounts: {...state.verbCounts, ...newCounts},
+        toReviewRootIds: {...state.toReviewRootIds, ...newToReviewRootIds},
         isLoading: false,
         hasMore: roots.length == _size,
       );

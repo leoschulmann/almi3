@@ -198,7 +198,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
     else {
       final roots = state.roots.where((r) {
         if (_filter == RootFilter.saved) return state.isBookmarked(r.id);
-        // TODO: toReview filter needs due count from word_progress
+        if (_filter == RootFilter.toReview) return state.isToReview(r.id);
         return true;
       }).toList();
       return SliverPadding(
