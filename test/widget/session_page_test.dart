@@ -279,6 +279,47 @@ void main() {
     });
 
     testWidgets(
+      'first day (CAP-6): due=0, new>=2 -> session is all introductions, never the empty state',
+      (tester) async {
+        await _insertVerb(contentDb, id: 50, value: 'ישב', translation: 'to sit');
+        await _insertVerb(contentDb, id: 51, value: 'עמד', translation: 'to stand');
+
+        await tester.pumpWidget(
+          harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 2)),
+        );
+        await tester.pumpAndSettle();
+
+        // Never the "nothing to review" empty state on day one (§11 CAP-6).
+        expect(find.textContaining('Нечего повторять'), findsNothing);
+
+        // First introduction card.
+        expect(find.text('ישב'), findsOneWidget);
+        expect(find.text('to sit'), findsOneWidget);
+        expect(find.text('Понятно'), findsOneWidget);
+
+        await tester.tap(find.text('Понятно'));
+        await tester.pumpAndSettle();
+
+        // Still no empty-state flash mid-queue; second introduction shows.
+        expect(find.textContaining('Нечего повторять'), findsNothing);
+        expect(find.text('עמד'), findsOneWidget);
+        expect(find.text('to stand'), findsOneWidget);
+        expect(find.text('Понятно'), findsOneWidget);
+
+        await tester.tap(find.text('Понятно'));
+        await tester.pumpAndSettle();
+
+        // Queue exhausted normally -- same exit path as a mixed session
+        // (SessionPage's Navigator.pop on SessionPhase.complete), no
+        // special-cased "first day" handling. Both lexemes were introduced.
+        expect(find.textContaining('Нечего повторять'), findsNothing);
+        final progress = await userDb.select(userDb.lexemeProgressTable).get();
+        expect(progress, hasLength(2));
+        expect(progress.map((p) => p.entityId).toSet(), {50, 51});
+      },
+    );
+
+    testWidgets(
       'pushed from HomePage: completing the queue pops back and refreshes home/progress status',
       (tester) async {
         await _insertVerb(contentDb, id: 40, value: 'רקד', translation: 'to dance');

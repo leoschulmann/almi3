@@ -17,6 +17,11 @@ class LexemeProgressRepository {
     return database.into(database.lexemeProgressTable).insert(companion);
   }
 
+  // SELECT * FROM lexeme_progress WHERE id = ?
+  Future<LexemeProgressTableData?> getById(int id) {
+    return (database.select(database.lexemeProgressTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
   // SELECT * FROM lexeme_progress WHERE entity_type = ? AND entity_id = ?
   Future<LexemeProgressTableData?> getByEntity(int entityType, int entityId) {
     return (database.select(database.lexemeProgressTable)
