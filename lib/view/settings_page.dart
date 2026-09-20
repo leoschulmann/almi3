@@ -4,7 +4,10 @@ import 'package:almi3/core/app_settings.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/view/font_picker_page.dart';
+import 'package:almi3/view/ignored_words_page.dart';
+import 'package:almi3/view/known_words_page.dart';
 import 'package:almi3/view/sync_page.dart';
+import 'package:almi3/viewmodel/home_notifier.dart' show ignoredWordsCountProvider, knownWordsCountProvider;
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,7 +66,7 @@ class _SettingsSheet extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 40),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate(
-                      _buildContent(context, settings, notifier),
+                      _buildContent(context, ref, settings, notifier),
                     ),
                   ),
                 ),
@@ -96,9 +99,23 @@ class _SettingsSheet extends ConsumerWidget {
 
   List<Widget> _buildContent(
     BuildContext context,
+    WidgetRef ref,
     AppSettings s,
     SettingsNotifier n,
   ) {
+    final ignoredCountAsync = ref.watch(ignoredWordsCountProvider);
+    final ignoredLabel = ignoredCountAsync.when(
+      data: (count) => 'Убрано: $count',
+      loading: () => 'Убрано: …',
+      error: (_, _) => 'Убрано: —',
+    );
+    final knownCountAsync = ref.watch(knownWordsCountProvider);
+    final knownLabel = knownCountAsync.when(
+      data: (count) => 'Известные слова: $count',
+      loading: () => 'Известные слова: …',
+      error: (_, _) => 'Известные слова: —',
+    );
+
     return [
       // ── General ──────────────────────────────────────────────────────────
       _SectionHeader('General'),
@@ -255,6 +272,28 @@ class _SettingsSheet extends ConsumerWidget {
           destructive: true,
           leadingIcon: _LeadIcon(icon: Icons.delete_outline_rounded, color: const Color(0xFFFF3B30)),
           onTap: () {/* TODO: clear audio cache */},
+        ),
+        _DisclosureRow(
+          label: ignoredLabel,
+          leadingIcon: _LeadIcon(icon: Icons.visibility_off_rounded, color: const Color(0xFF8E8E93)),
+          onTap: () {
+            Navigator.of(context)
+                .push(adaptivePageRoute(builder: (_) => const IgnoredWordsPage()))
+                .then((_) {
+              if (context.mounted) ref.invalidate(ignoredWordsCountProvider);
+            });
+          },
+        ),
+        _DisclosureRow(
+          label: knownLabel,
+          leadingIcon: _LeadIcon(icon: Icons.check_circle_outline_rounded, color: const Color(0xFF34C759)),
+          onTap: () {
+            Navigator.of(context)
+                .push(adaptivePageRoute(builder: (_) => const KnownWordsPage()))
+                .then((_) {
+              if (context.mounted) ref.invalidate(knownWordsCountProvider);
+            });
+          },
         ),
       ]),
 
