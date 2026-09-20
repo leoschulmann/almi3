@@ -12,7 +12,7 @@ import 'package:almi3/model/repository/user/conjugation_card_repository.dart';
 import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:almi3/view/home_page.dart';
-import 'package:almi3/view/practice_stub_page.dart';
+import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
@@ -125,14 +125,14 @@ void main() {
       expect(find.byType(SessionPage), findsOneWidget);
     });
 
-    testWidgets('tapping "Тренировка" navigates to the practice stub', (tester) async {
+    testWidgets('tapping "Тренировка" navigates to the practice page', (tester) async {
       await tester.pumpWidget(harness());
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Тренировка'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(PracticeStubPage), findsOneWidget);
+      expect(find.byType(PracticePage), findsOneWidget);
     });
 
     testWidgets('progress-showcase shows empty-state message with no started lexemes', (tester) async {

@@ -1,6 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
-import 'package:almi3/view/practice_stub_page.dart';
+import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/home_notifier.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
@@ -57,7 +57,7 @@ class HomePage extends ConsumerWidget {
                 onTap: () {
                   HapticFeedback.mediumImpact();
                   Navigator.of(context)
-                      .push(adaptivePageRoute(builder: (_) => const PracticeStubPage()))
+                      .push(adaptivePageRoute(builder: (_) => const PracticePage()))
                       .then((_) {
                     if (context.mounted) ref.invalidate(progressStatusProvider);
                   });

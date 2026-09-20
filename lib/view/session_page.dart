@@ -1,7 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
-import 'package:almi3/view/practice_stub_page.dart';
+import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/widgets/answer_reaction.dart';
 import 'package:almi3/view/widgets/introduction_card.dart';
 import 'package:almi3/view/widgets/quiz_mc4_recognition.dart';
@@ -77,7 +77,7 @@ class _SessionPageState extends ConsumerState<SessionPage> {
         return _NewLimitForkState(
           onContinueWithNew: () => ref.read(sessionNotifierProvider.notifier).continueWithMoreNew(),
           onPractice: () {
-            Navigator.of(context).push(adaptivePageRoute(builder: (_) => const PracticeStubPage()));
+            Navigator.of(context).push(adaptivePageRoute(builder: (_) => const PracticePage()));
           },
         );
 

@@ -5,7 +5,7 @@ import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/view/home_page.dart';
-import 'package:almi3/view/practice_stub_page.dart';
+import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/session_notifier.dart' show backlogWelcomeCopy, newLimitForkCopy;
 import 'package:almi3/viewmodel/settings_notifier.dart';
@@ -360,7 +360,7 @@ void main() {
       expect(find.text('Понятно'), findsOneWidget);
     });
 
-    testWidgets('tapping "Потренировать" navigates to the practice stub page', (tester) async {
+    testWidgets('tapping "Потренировать" navigates to the practice page', (tester) async {
       await _insertVerb(contentDb, id: 94, value: 'ידע', translation: 'to know');
       await _insertVerb(contentDb, id: 95, value: 'חשב', translation: 'to think');
 
@@ -373,7 +373,7 @@ void main() {
       await tester.tap(find.text('Потренировать'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(PracticeStubPage), findsOneWidget);
+      expect(find.byType(PracticePage), findsOneWidget);
     });
 
     testWidgets('due-only session (no new items at all) never shows the fork', (tester) async {
