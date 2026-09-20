@@ -43,7 +43,7 @@ class VerbPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _MainSection(verb: verb),
+          _MainSection(verb: verb, health: state.health),
           ..._buildTenseSections(context, ref, state, verb),
           const SizedBox(height: 32),
         ],
@@ -87,8 +87,9 @@ class VerbPage extends ConsumerWidget {
 
 class _MainSection extends StatelessWidget {
   final VerbDetailDto verb;
+  final double? health;
 
-  const _MainSection({required this.verb});
+  const _MainSection({required this.verb, required this.health});
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +107,7 @@ class _MainSection extends StatelessWidget {
               children: [
                 Align(
                   alignment: Alignment.topLeft,
-                  child: SvgPicture.asset(heartIconAsset(0), width: 42, height: 36),
+                  child: SvgPicture.asset(heartIconAsset(heartHealthLevel(health)), width: 42, height: 36),
                 ),
                 Align(
                   alignment: Alignment.topCenter,
