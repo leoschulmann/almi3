@@ -6,6 +6,7 @@ import 'package:almi3/model/db/db_providers.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/fsrs/health.dart';
+import 'package:almi3/model/fsrs/lexeme_selection.dart';
 import 'package:almi3/model/fsrs/production_card_introduction.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
@@ -14,7 +15,9 @@ import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
 import 'package:almi3/model/repository/user/conjugation_card_repository.dart';
 import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
+import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_repository.dart';
 import 'package:almi3/viewmodel/session_notifier.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
@@ -50,6 +53,53 @@ class _FailingScheduledReviewService extends ScheduledReviewService {
   @override
   Future<List<DueLexicalCard>> getDueQueuePrioritized({int? dailyCap}) {
     throw StateError('simulated due-queue failure');
+  }
+}
+
+/// A lexeme-selection service whose candidate query fails starting from its
+/// second call, to exercise the new-limit-fork probe's error path (§9.3
+/// matrix: "probe fails -> falls back to plain complete") while still
+/// letting the session's initial `_load()` (first call, building the
+/// queue) succeed normally. `countIntroducedToday` is left real so the cap
+/// check upstream of the probe still passes.
+class _ProbeFailingLexemeSelectionService extends LexemeSelectionService {
+  _ProbeFailingLexemeSelectionService({
+    required super.lexemeProgressRepository,
+    required super.verbRepository,
+  });
+
+  int _calls = 0;
+
+  @override
+  Future<List<VerbTableData>> selectNewLexemes(int limit) {
+    _calls++;
+    if (_calls > 1) {
+      throw StateError('simulated candidate-probe failure');
+    }
+    return super.selectNewLexemes(limit);
+  }
+}
+
+/// A lexeme-selection service whose candidate query fails starting from its
+/// third call, to exercise `continueWithMoreNew()`'s OWN try/catch (not the
+/// probe's): 1st call = `_load()`'s initial fetch, 2nd call = the
+/// exhaustion-time probe (both must succeed so the fork actually shows),
+/// 3rd call = `continueWithMoreNew()`'s own re-fetch, which is made to fail.
+class _ContinueFetchFailingLexemeSelectionService extends LexemeSelectionService {
+  _ContinueFetchFailingLexemeSelectionService({
+    required super.lexemeProgressRepository,
+    required super.verbRepository,
+  });
+
+  int _calls = 0;
+
+  @override
+  Future<List<VerbTableData>> selectNewLexemes(int limit) {
+    _calls++;
+    if (_calls > 2) {
+      throw StateError('simulated continueWithMoreNew fetch failure');
+    }
+    return super.selectNewLexemes(limit);
   }
 }
 
@@ -378,6 +428,129 @@ void main() {
       final dueItem = state.currentItem as SessionDueItem;
       expect(dueItem.renderedQuizType, QuizType.typedProduction);
       expect(state.quizOptions, isEmpty);
+    });
+
+    test('cap reached with more candidates beyond it -> newLimitFork phase', () async {
+      await _insertVerb(contentDb, id: 80, value: 'קם', translation: 'to rise', frequencyRank: 1);
+      await _insertVerb(contentDb, id: 81, value: 'בא', translation: 'to come', frequencyRank: 2);
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1));
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      await container.read(sessionNotifierProvider.notifier).completeIntroduction();
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.newLimitFork);
+
+      // settings.newCardsPerDay must remain untouched by merely showing the fork.
+      expect(container.read(settingsProvider).newCardsPerDay, 1);
+    });
+
+    test('cap never reached (fewer candidates than remaining) -> complete, no fork', () async {
+      await _insertVerb(contentDb, id: 82, value: 'הלך', translation: 'to walk', frequencyRank: 1);
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5));
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      await container.read(sessionNotifierProvider.notifier).completeIntroduction();
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.complete);
+    });
+
+    test('due-only session with due queue exhausted never shows the fork', () async {
+      await _insertVerb(contentDb, id: 90, value: 'שתה', translation: 'to drink');
+      await _insertDueCard(userDb, verbId: 90, direction: directionRecognition);
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 0));
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final dueItem = container.read(sessionNotifierProvider).currentItem as SessionDueItem;
+      await container.read(sessionNotifierProvider.notifier).submitDueAnswer(
+            QuizResult(quizType: dueItem.renderedQuizType, wasCorrect: true, responseTimeMs: 500),
+          );
+      await container.read(sessionNotifierProvider.notifier).dismissReaction();
+
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.complete);
+    });
+
+    test('continueWithMoreNew adds more items without touching settings', () async {
+      await _insertVerb(contentDb, id: 83, value: 'ראה', translation: 'to see', frequencyRank: 1);
+      await _insertVerb(contentDb, id: 84, value: 'שמע', translation: 'to hear', frequencyRank: 2);
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1));
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final notifier = container.read(sessionNotifierProvider.notifier);
+      await notifier.completeIntroduction();
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.newLimitFork);
+
+      await notifier.continueWithMoreNew();
+      final state = container.read(sessionNotifierProvider);
+      expect(state.phase, SessionPhase.ready);
+      expect(state.currentItem, isA<SessionNewItem>());
+      expect((state.currentItem as SessionNewItem).entityId, 84);
+
+      // Session-scoped bypass only -- the persisted setting is never written to.
+      expect(container.read(settingsProvider).newCardsPerDay, 1);
+
+      await notifier.completeIntroduction();
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress, hasLength(2));
+      expect(progress.map((p) => p.entityId).toSet(), {83, 84});
+    });
+
+    test('probe failure falls back to complete, no crash', () async {
+      await _insertVerb(contentDb, id: 85, value: 'ידע', translation: 'to know', frequencyRank: 1);
+      await _insertVerb(contentDb, id: 86, value: 'חשב', translation: 'to think', frequencyRank: 2);
+
+      final container = buildContainer(
+        settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1),
+        extraOverrides: [
+          lexemeSelectionServiceProvider.overrideWith(
+            (ref) => _ProbeFailingLexemeSelectionService(
+              lexemeProgressRepository: ref.watch(lexemeProgressRepositoryProvider),
+              verbRepository: VerbRepository(ref.watch(appDatabaseProvider)),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      await container.read(sessionNotifierProvider.notifier).completeIntroduction();
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.complete);
+    });
+
+    test('continueWithMoreNew: its own fetch failure surfaces as phase error, not a crash', () async {
+      await _insertVerb(contentDb, id: 87, value: 'נתן', translation: 'to give', frequencyRank: 1);
+      await _insertVerb(contentDb, id: 88, value: 'לקח', translation: 'to take', frequencyRank: 2);
+
+      final container = buildContainer(
+        settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1),
+        extraOverrides: [
+          lexemeSelectionServiceProvider.overrideWith(
+            (ref) => _ContinueFetchFailingLexemeSelectionService(
+              lexemeProgressRepository: ref.watch(lexemeProgressRepositoryProvider),
+              verbRepository: VerbRepository(ref.watch(appDatabaseProvider)),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await _settle(container);
+
+      final notifier = container.read(sessionNotifierProvider.notifier);
+      await notifier.completeIntroduction();
+      // 1st call (_load) and 2nd call (the exhaustion-time probe) both
+      // succeeded, so the fork actually shows.
+      expect(container.read(sessionNotifierProvider).phase, SessionPhase.newLimitFork);
+
+      // 3rd call is continueWithMoreNew()'s own re-fetch, which fails.
+      await notifier.continueWithMoreNew();
+      final state = container.read(sessionNotifierProvider);
+      expect(state.phase, SessionPhase.error);
+      expect(state.errorMessage, isNotNull);
     });
 
     test('error path: due-queue failure surfaces as phase error, not a crash', () async {

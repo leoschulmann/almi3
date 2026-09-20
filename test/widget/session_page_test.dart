@@ -5,7 +5,9 @@ import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/view/home_page.dart';
+import 'package:almi3/view/practice_stub_page.dart';
 import 'package:almi3/view/session_page.dart';
+import 'package:almi3/viewmodel/session_notifier.dart' show newLimitForkCopy;
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
 import 'package:drift/drift.dart';
@@ -318,6 +320,101 @@ void main() {
         expect(progress.map((p) => p.entityId).toSet(), {50, 51});
       },
     );
+
+    testWidgets(
+      'cap reached with more candidates -> fork screen with exact copy and both actions',
+      (tester) async {
+        await _insertVerb(contentDb, id: 90, value: 'קם', translation: 'to rise');
+        await _insertVerb(contentDb, id: 91, value: 'בא', translation: 'to come');
+
+        await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1)));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Понятно'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(newLimitForkCopy),
+          findsOneWidget,
+        );
+        expect(find.text('Продолжить с новыми'), findsOneWidget);
+        expect(find.text('Потренировать'), findsOneWidget);
+      },
+    );
+
+    testWidgets('tapping "Продолжить с новыми" resumes the session with more new items', (tester) async {
+      await _insertVerb(contentDb, id: 92, value: 'ראה', translation: 'to see');
+      await _insertVerb(contentDb, id: 93, value: 'שמע', translation: 'to hear');
+
+      await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Понятно'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Продолжить с новыми'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('שמע'), findsOneWidget);
+      expect(find.text('to hear'), findsOneWidget);
+      expect(find.text('Понятно'), findsOneWidget);
+    });
+
+    testWidgets('tapping "Потренировать" navigates to the practice stub page', (tester) async {
+      await _insertVerb(contentDb, id: 94, value: 'ידע', translation: 'to know');
+      await _insertVerb(contentDb, id: 95, value: 'חשב', translation: 'to think');
+
+      await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 1)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Понятно'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Потренировать'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PracticeStubPage), findsOneWidget);
+    });
+
+    testWidgets('due-only session (no new items at all) never shows the fork', (tester) async {
+      await _insertVerb(contentDb, id: 96, value: 'שתה', translation: 'to drink');
+      await _insertDueCard(userDb, verbId: 96, direction: directionProduction);
+
+      await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 0)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'שתה');
+      await tester.tap(find.text('Ответить'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Далее'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(newLimitForkCopy),
+        findsNothing,
+      );
+    });
+
+    testWidgets('cap not reached (fewer candidates than the norm) -> completes normally, no fork', (tester) async {
+      // newCardsPerDay=5 but only 1 candidate exists -> the cap is never
+      // actually hit, so the fork must never show.
+      await _insertVerb(contentDb, id: 97, value: 'גר', translation: 'to live');
+
+      await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('גר'), findsOneWidget);
+      expect(find.text('to live'), findsOneWidget);
+
+      await tester.tap(find.text('Понятно'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(newLimitForkCopy), findsNothing);
+
+      final progress = await userDb.select(userDb.lexemeProgressTable).get();
+      expect(progress, hasLength(1));
+      expect(progress.single.entityId, 97);
+    });
 
     testWidgets(
       'pushed from HomePage: completing the queue pops back and refreshes home/progress status',

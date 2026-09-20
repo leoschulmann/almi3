@@ -1,5 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
+import 'package:almi3/view/practice_stub_page.dart';
 import 'package:almi3/view/widgets/answer_reaction.dart';
 import 'package:almi3/view/widgets/introduction_card.dart';
 import 'package:almi3/view/widgets/quiz_mc4_recognition.dart';
@@ -71,6 +73,14 @@ class _SessionPageState extends ConsumerState<SessionPage> {
       case SessionPhase.empty:
         return _EmptyState(onExit: () => Navigator.of(context).pop());
 
+      case SessionPhase.newLimitFork:
+        return _NewLimitForkState(
+          onContinueWithNew: () => ref.read(sessionNotifierProvider.notifier).continueWithMoreNew(),
+          onPractice: () {
+            Navigator.of(context).push(adaptivePageRoute(builder: (_) => const PracticeStubPage()));
+          },
+        );
+
       case SessionPhase.error:
         return _ErrorState(onExit: () => Navigator.of(context).pop());
 
@@ -129,6 +139,36 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           TextButton(onPressed: onExit, child: const Text('Назад')),
+        ],
+      ),
+    );
+  }
+}
+
+/// The soft-limit fork (§9.3): shown at natural queue exhaustion when the
+/// daily new-cards norm was actually the limiting factor and more
+/// candidates exist beyond it. Copy is the spec's exact wording, verbatim.
+class _NewLimitForkState extends StatelessWidget {
+  final VoidCallback onContinueWithNew;
+  final VoidCallback onPractice;
+
+  const _NewLimitForkState({required this.onContinueWithNew, required this.onPractice});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            newLimitForkCopy,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(onPressed: onContinueWithNew, child: const Text('Продолжить с новыми')),
+          const SizedBox(height: 12),
+          TextButton(onPressed: onPractice, child: const Text('Потренировать')),
         ],
       ),
     );

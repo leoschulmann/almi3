@@ -79,7 +79,11 @@ List<SessionItem> interleaveSessionQueue(List<SessionItem> due, List<SessionItem
   return result;
 }
 
-enum SessionPhase { loading, empty, ready, reacting, complete, error }
+enum SessionPhase { loading, empty, ready, reacting, newLimitFork, complete, error }
+
+/// §9.3's exact copy for the new-limit fork -- shared by the widget and its
+/// tests so the literal is never duplicated across files.
+const String newLimitForkCopy = 'Цель выполнена 🎉 — Продолжить с новыми или потренировать начатые?';
 
 /// Health read once before and once after a due-card answer (§11, boundaries)
 /// -- the diff drives the visible reaction. Never a UI-side recompute.
@@ -396,8 +400,9 @@ class SessionNotifier extends Notifier<SessionState> {
   Future<void> _advance() async {
     final nextIndex = state.index + 1;
     if (nextIndex >= state.queue.length) {
+      final showFork = await _shouldShowNewLimitFork();
       state = state.copyWith(
-        phase: SessionPhase.complete,
+        phase: showFork ? SessionPhase.newLimitFork : SessionPhase.complete,
         index: nextIndex,
         clearReaction: true,
         clearCurrentVerb: true,
@@ -408,5 +413,67 @@ class SessionNotifier extends Notifier<SessionState> {
     // Same atomicity reasoning as _load: compute the next item's content
     // first, then flip phase/index/content together in one update.
     await _enterReadyOrError(queue: state.queue, index: nextIndex, clearReaction: true);
+  }
+
+  /// Cap-vs-exhaustion probe (§9.3, code map): re-checked HERE at the point
+  /// the queue would otherwise go `complete`, not at `_load` time -- items
+  /// introduced mid-session can push `introducedToday` past the cap by the
+  /// time the queue is actually exhausted. Only offers the fork when the
+  /// daily new-cards norm was actually the limiting factor (not just "no
+  /// more due/new items exist") AND more new candidates remain beyond it.
+  /// Never touches the `due` queue or any persisted setting. Any failure
+  /// (repository/service throw) is caught and logged -- falls back to plain
+  /// `complete`, never crashes the session.
+  Future<bool> _shouldShowNewLimitFork() async {
+    try {
+      final settings = ref.read(settingsProvider);
+      if (settings.newCardsPerDay <= 0) return false;
+      final lexemeSelectionService = ref.read(lexemeSelectionServiceProvider);
+
+      final introducedToday = await lexemeSelectionService.countIntroducedToday(settings.dayBoundaryHour);
+      if (introducedToday < settings.newCardsPerDay) return false; // cap wasn't actually hit
+
+      // Existence probe only -- doesn't change what's already been shown
+      // this session (§"Always").
+      final moreCandidates = await lexemeSelectionService.selectNewLexemes(1);
+      return moreCandidates.isNotEmpty;
+    } catch (e, st) {
+      logger.e('SessionNotifier._shouldShowNewLimitFork: probe failed, falling back to complete', error: e, stackTrace: st);
+      return false;
+    }
+  }
+
+  /// "Продолжить с новыми" (§9.3): session-scoped bypass of the daily cap --
+  /// re-invokes [LexemeSelectionService.selectNewLexemes] ignoring
+  /// `remaining`, appends the results to the live queue, and resumes at the
+  /// first of them. Never writes `settings.newCardsPerDay` or any other
+  /// persisted setting. Batch size mirrors the configured daily norm (the
+  /// same quantity as the original batch), floored at 1.
+  Future<void> continueWithMoreNew() async {
+    if (state.phase != SessionPhase.newLimitFork) return;
+    if (_busy) return;
+    _busy = true;
+    try {
+      final settings = ref.read(settingsProvider);
+      final lexemeSelectionService = ref.read(lexemeSelectionServiceProvider);
+      final batchSize = settings.newCardsPerDay > 0 ? settings.newCardsPerDay : 1;
+      final moreVerbs = await lexemeSelectionService.selectNewLexemes(batchSize);
+
+      if (moreVerbs.isEmpty) {
+        // Race: candidates existed at probe time but not anymore. No crash,
+        // just end the session normally.
+        state = state.copyWith(phase: SessionPhase.complete, clearReaction: true, clearCurrentVerb: true);
+        return;
+      }
+
+      final newItems = moreVerbs.map((v) => SessionNewItem(entityType: entityTypeVerb, entityId: v.id)).toList();
+      final queue = [...state.queue, ...newItems];
+      await _enterReadyOrError(queue: queue, index: state.index, clearReaction: true);
+    } catch (e, st) {
+      logger.e('SessionNotifier.continueWithMoreNew: failed to fetch more new lexemes', error: e, stackTrace: st);
+      state = state.copyWith(phase: SessionPhase.error, errorMessage: e.toString());
+    } finally {
+      _busy = false;
+    }
   }
 }
