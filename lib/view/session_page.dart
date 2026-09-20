@@ -81,6 +81,11 @@ class _SessionPageState extends ConsumerState<SessionPage> {
           },
         );
 
+      case SessionPhase.backlogWelcome:
+        return _BacklogWelcomeState(
+          onStart: () => ref.read(sessionNotifierProvider.notifier).dismissBacklogWelcome(),
+        );
+
       case SessionPhase.error:
         return _ErrorState(onExit: () => Navigator.of(context).pop());
 
@@ -169,6 +174,32 @@ class _NewLimitForkState extends StatelessWidget {
           ElevatedButton(onPressed: onContinueWithNew, child: const Text('Продолжить с новыми')),
           const SizedBox(height: 12),
           TextButton(onPressed: onPractice, child: const Text('Потренировать')),
+        ],
+      ),
+    );
+  }
+}
+
+/// The one-time debt-backlog welcome screen (story 7, §"Always"): shown
+/// before the first card when the due queue is a "naves". No raw numbers
+/// (due-count, backlog size, batch size) ever appear in this copy.
+class _BacklogWelcomeState extends StatelessWidget {
+  final VoidCallback onStart;
+  const _BacklogWelcomeState({required this.onStart});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            backlogWelcomeCopy,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(onPressed: onStart, child: const Text('Начать')),
         ],
       ),
     );

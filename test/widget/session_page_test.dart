@@ -7,7 +7,7 @@ import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/view/home_page.dart';
 import 'package:almi3/view/practice_stub_page.dart';
 import 'package:almi3/view/session_page.dart';
-import 'package:almi3/viewmodel/session_notifier.dart' show newLimitForkCopy;
+import 'package:almi3/viewmodel/session_notifier.dart' show backlogWelcomeCopy, newLimitForkCopy;
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
 import 'package:drift/drift.dart';
@@ -414,6 +414,43 @@ void main() {
       final progress = await userDb.select(userDb.lexemeProgressTable).get();
       expect(progress, hasLength(1));
       expect(progress.single.entityId, 97);
+    });
+
+    testWidgets('backlog (>30 due) shows the welcome screen with no digits, then "Начать" starts the session', (tester) async {
+      for (var i = 0; i < 35; i++) {
+        await _insertVerb(contentDb, id: 400 + i, value: 'סגר', translation: 'to close $i');
+        await _insertDueCard(userDb, verbId: 400 + i, direction: directionProduction);
+      }
+
+      await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5)));
+      await tester.pumpAndSettle();
+
+      expect(find.text(backlogWelcomeCopy), findsOneWidget);
+      expect(find.text('Начать'), findsOneWidget);
+      // No raw numbers anywhere in the welcome copy.
+      expect(RegExp(r'\d').hasMatch(backlogWelcomeCopy), isFalse);
+      // No quiz content shown yet -- welcome precedes the first card.
+      expect(find.byType(TextField), findsNothing);
+
+      await tester.tap(find.text('Начать'));
+      await tester.pumpAndSettle();
+
+      // Welcome screen is gone; a due-card quiz for the porция now renders.
+      expect(find.text(backlogWelcomeCopy), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('no backlog (<=30 due) never shows the welcome screen', (tester) async {
+      for (var i = 0; i < 10; i++) {
+        await _insertVerb(contentDb, id: 500 + i, value: 'שבר', translation: 'to break $i');
+        await _insertDueCard(userDb, verbId: 500 + i, direction: directionProduction);
+      }
+
+      await tester.pumpWidget(harness(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5)));
+      await tester.pumpAndSettle();
+
+      expect(find.text(backlogWelcomeCopy), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets(

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:almi3/core/engine_config.dart';
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/health.dart';
@@ -79,11 +80,16 @@ List<SessionItem> interleaveSessionQueue(List<SessionItem> due, List<SessionItem
   return result;
 }
 
-enum SessionPhase { loading, empty, ready, reacting, newLimitFork, complete, error }
+enum SessionPhase { loading, empty, ready, reacting, newLimitFork, backlogWelcome, complete, error }
 
 /// §9.3's exact copy for the new-limit fork -- shared by the widget and its
 /// tests so the literal is never duplicated across files.
 const String newLimitForkCopy = 'Цель выполнена 🎉 — Продолжить с новыми или потренировать начатые?';
+
+/// Debt-backlog welcome copy (story 7): shown once before the first card
+/// when the due queue is a "naves" (> [backlogThreshold]). Deliberately
+/// contains no raw numbers (due-count, backlog size, batch index) -- §"Always".
+const String backlogWelcomeCopy = 'Давно не заходили — начнём с небольшой порции, без спешки.';
 
 /// Health read once before and once after a due-card answer (§11, boundaries)
 /// -- the diff drives the visible reaction. Never a UI-side recompute.
@@ -167,7 +173,17 @@ class SessionNotifier extends Notifier<SessionState> {
       // Session queue = getDueQueuePrioritized() interleaved with
       // selectNewLexemes(remaining), remaining computed exactly as
       // homeStatusProvider does (§"Always").
-      final dueCards = await scheduledReviewService.getDueQueuePrioritized();
+      //
+      // Debt-backlog porционирование (story 7, §9.4/CAP-5): fetch the full
+      // prioritized due queue once, then derive both whether it's a "naves"
+      // (> backlogThreshold) and the actual session queue (capped to
+      // settings.newCardsPerDay when it is) from that single result --
+      // avoids a second round-trip and the race window between two queries.
+      // Below/at threshold, behavior is unchanged (full due queue, no cap,
+      // no welcome screen).
+      final fullDueCards = await scheduledReviewService.getDueQueuePrioritized();
+      final isBacklog = fullDueCards.length > backlogThreshold;
+      final dueCards = isBacklog ? fullDueCards.take(settings.newCardsPerDay).toList() : fullDueCards;
 
       final introducedToday = await lexemeSelectionService.countIntroducedToday(settings.dayBoundaryHour);
       final remaining = max(0, settings.newCardsPerDay - introducedToday);
@@ -199,6 +215,16 @@ class SessionNotifier extends Notifier<SessionState> {
 
       if (queue.isEmpty) {
         state = state.copyWith(phase: SessionPhase.empty, queue: queue, index: 0);
+        return;
+      }
+
+      if (isBacklog) {
+        // One-time encouraging screen before the first card (§"Always") --
+        // the porция is already loaded into `queue`, but content stays
+        // unfetched (no currentVerb yet) until dismissBacklogWelcome()
+        // hands off to _enterReadyOrError.
+        _pendingBacklogQueue = queue;
+        state = state.copyWith(phase: SessionPhase.backlogWelcome, queue: queue, index: 0);
         return;
       }
 
@@ -323,6 +349,28 @@ class SessionNotifier extends Notifier<SessionState> {
     final options = [correct, ...distractors];
     options.shuffle(Random());
     return options;
+  }
+
+  /// The already-loaded backlog porция, held between `_load()` setting
+  /// phase `backlogWelcome` and `dismissBacklogWelcome()` actually entering
+  /// `ready` -- avoids re-querying the due queue (and re-picking a
+  /// possibly-different porция) once the user taps through.
+  List<SessionItem>? _pendingBacklogQueue;
+
+  /// Dismisses the one-time debt-backlog welcome screen and enters the
+  /// already-loaded porция at index 0.
+  Future<void> dismissBacklogWelcome() async {
+    if (state.phase != SessionPhase.backlogWelcome) return;
+    if (_busy) return;
+    final queue = _pendingBacklogQueue;
+    if (queue == null) return;
+    _busy = true;
+    try {
+      _pendingBacklogQueue = null;
+      await _enterReadyOrError(queue: queue, index: 0, clearReaction: false);
+    } finally {
+      _busy = false;
+    }
   }
 
   /// Reentrancy guard: one in-flight introduce/submit/dismiss at a time.

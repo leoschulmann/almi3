@@ -553,6 +553,58 @@ void main() {
       expect(state.errorMessage, isNotNull);
     });
 
+    test('backlog (>30 due): phase backlogWelcome with a newCardsPerDay-sized porция', () async {
+      // production direction avoids the mc4Recognition distractor guard --
+      // only the backlog-sizing behavior is under test here. Each due card
+      // needs its own lexeme (lexeme_progress has a unique entity constraint).
+      for (var i = 0; i < 35; i++) {
+        await _insertVerb(contentDb, id: 100 + i, value: 'סגר', translation: 'to close $i');
+        await _insertDueCard(userDb, verbId: 100 + i, direction: directionProduction);
+      }
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5));
+      addTearDown(container.dispose);
+
+      final state = await _settle(container);
+      expect(state.phase, SessionPhase.backlogWelcome);
+      // porция size = settings.newCardsPerDay (5), not the full 35-card backlog.
+      expect(state.queue.whereType<SessionDueItem>(), hasLength(5));
+      // No content loaded yet -- welcome screen precedes the first card.
+      expect(state.currentVerb == null, isTrue);
+    });
+
+    test('no backlog (<=30 due): phase ready directly, no welcome screen, full due queue', () async {
+      for (var i = 0; i < 30; i++) {
+        await _insertVerb(contentDb, id: 200 + i, value: 'שבר', translation: 'to break $i');
+        await _insertDueCard(userDb, verbId: 200 + i, direction: directionProduction);
+      }
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5));
+      addTearDown(container.dispose);
+
+      final state = await _settle(container);
+      expect(state.phase, SessionPhase.ready);
+      expect(state.queue.whereType<SessionDueItem>(), hasLength(30));
+    });
+
+    test('dismissBacklogWelcome() enters ready with the already-loaded porция', () async {
+      for (var i = 0; i < 35; i++) {
+        await _insertVerb(contentDb, id: 300 + i, value: 'פתח', translation: 'to open $i');
+        await _insertDueCard(userDb, verbId: 300 + i, direction: directionProduction);
+      }
+
+      final container = buildContainer(settings: AppSettings.defaultSettings().copyWith(newCardsPerDay: 5));
+      addTearDown(container.dispose);
+      final welcome = await _settle(container);
+      expect(welcome.phase, SessionPhase.backlogWelcome);
+
+      await container.read(sessionNotifierProvider.notifier).dismissBacklogWelcome();
+      final state = container.read(sessionNotifierProvider);
+      expect(state.phase, SessionPhase.ready);
+      expect(state.queue, hasLength(5));
+      expect(state.currentVerb, isNotNull);
+    });
+
     test('error path: due-queue failure surfaces as phase error, not a crash', () async {
       final container = buildContainer(
         extraOverrides: [
