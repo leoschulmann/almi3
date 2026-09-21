@@ -78,6 +78,8 @@ enum AppLanguage {
         AppLanguage.en => 'English',
         AppLanguage.ru => 'Russian',
       };
+
+  Locale get locale => Locale(name);
 }
 
 enum AppTheme { light, dark, auto }

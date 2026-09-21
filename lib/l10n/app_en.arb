@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "appTitle": "almi yaha",
+  "@appTitle": {
+    "description": "Application title, placeholder key proving the intl/ARB wiring works end to end; real string migration happens in story 4."
+  }
+}

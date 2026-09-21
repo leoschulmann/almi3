@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:almi3/view/onboarding_page.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
@@ -45,11 +47,21 @@ class App extends ConsumerWidget {
       AppTheme.auto  => ThemeMode.system,
     };
 
+    final appLocale = ref.watch(settingsProvider.select((s) => s.language.locale));
+
     final onboardingGate = ref.watch(onboardingGateProvider);
 
     return MaterialApp(
       title: 'almi yaha',
       themeMode: themeMode,
+      locale: appLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.tekhelet)),
       darkTheme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.tekhelet, brightness: Brightness.dark)),
       home: CupertinoTheme(
