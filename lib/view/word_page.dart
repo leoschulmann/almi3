@@ -60,6 +60,7 @@ class WordPage extends ConsumerWidget {
             return WordChip(
               hebrewText: w.value,
               translation: w.translation,
+              isFallback: w.isFallback,
               type: WordType.verb,
               isBookmarked: state.isBookmarked(w.id),
               onBookmarkToggle: () =>

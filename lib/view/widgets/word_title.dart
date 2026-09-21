@@ -1,5 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
+import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,10 +14,17 @@ const _measureFontSize = 48.0;
 
 class WordTitle extends StatelessWidget {
   final List<String> translations;
+  final bool translationsIsFallback;
   final String hebrewValue;
   final WordType wordType;
 
-  const WordTitle({super.key, required this.translations, required this.hebrewValue, required this.wordType});
+  const WordTitle({
+    super.key,
+    required this.translations,
+    this.translationsIsFallback = false,
+    required this.hebrewValue,
+    required this.wordType,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,17 +72,28 @@ class WordTitle extends StatelessWidget {
             SizedBox(
               width: translationWidth,
               // decoration: BoxDecoration(border: Border.all(color: Colors.red, width: 1)),
-              child: AutoSizeText(
-                primaryTranslation,
-                maxLines: 1,
-                minFontSize: 18,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.rubik(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w300,
-                  fontStyle: FontStyle.italic,
-                  color: hasTranslation ? AppColors.textPrimary : AppColors.textSecondary,
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AutoSizeText(
+                    primaryTranslation,
+                    maxLines: 1,
+                    minFontSize: 18,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.rubik(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w300,
+                      fontStyle: FontStyle.italic,
+                      color: hasTranslation ? AppColors.textPrimary : AppColors.textSecondary,
+                    ),
+                  ),
+                  if (hasTranslation && translationsIsFallback)
+                    const Positioned(
+                      top: -2,
+                      right: -2,
+                      child: FallbackWarningMarker(),
+                    ),
+                ],
               ),
             ),
             Container(

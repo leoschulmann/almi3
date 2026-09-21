@@ -58,16 +58,114 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
 
   String _superscript(int n) => n.toString().split('').map((d) => _superscriptDigits[int.parse(d)]).join();
 
+  // Fallback candidate order for a selected `lang` (dbCode): the selected
+  // language itself first, then EN (unless it IS the selected language),
+  // then the remaining AppLanguage.values in declaration order. Spec
+  // (CAP-3 / story 2): fixed order, no user-configurable priority.
+  List<String> _fallbackOrder(String lang) {
+    final rest = AppLanguage.values.where((l) => l.dbCode != lang && l != AppLanguage.en).map((l) => l.dbCode);
+    return [lang, if (lang != AppLanguage.en.dbCode) AppLanguage.en.dbCode, ...rest];
+  }
+
+  // Resolves a single value per parent id, trying `lang` first and then the
+  // fallback order (EN, then remaining AppLanguage.values), one query per
+  // candidate language covering all still-unresolved parents. Returns a map
+  // parentId -> (value, isFallback); a parent id absent from the result has
+  // no value on any language.
+  Future<Map<int, (String value, bool isFallback)>> _resolveWithFallback({
+    required List<int> parentIds,
+    required String lang,
+    required Future<Map<int, String>> Function(List<int> ids, String candidateLang) fetch,
+  }) async {
+    final result = <int, (String, bool)>{};
+    if (parentIds.isEmpty) return result;
+    var remaining = parentIds.toSet();
+    for (final candidate in _fallbackOrder(lang)) {
+      if (remaining.isEmpty) break;
+      final rows = await fetch(remaining.toList(), candidate);
+      final isFallback = candidate != lang;
+      for (final entry in rows.entries) {
+        if (!remaining.contains(entry.key)) continue;
+        result[entry.key] = (entry.value, isFallback);
+        remaining.remove(entry.key);
+      }
+    }
+    return result;
+  }
+
+  // Same as _resolveWithFallback but for parents that carry a *list* of
+  // values per language (e.g. multiple translations per verb) -- used where
+  // a single language block (all-or-nothing per parent) is the fallback
+  // unit, per Design Notes.
+  Future<Map<int, (List<String> values, bool isFallback)>> _resolveListWithFallback({
+    required List<int> parentIds,
+    required String lang,
+    required Future<Map<int, List<String>>> Function(List<int> ids, String candidateLang) fetch,
+  }) async {
+    final result = <int, (List<String>, bool)>{};
+    if (parentIds.isEmpty) return result;
+    var remaining = parentIds.toSet();
+    for (final candidate in _fallbackOrder(lang)) {
+      if (remaining.isEmpty) break;
+      final rows = await fetch(remaining.toList(), candidate);
+      final isFallback = candidate != lang;
+      for (final entry in rows.entries) {
+        if (!remaining.contains(entry.key) || entry.value.isEmpty) continue;
+        result[entry.key] = (entry.value, isFallback);
+        remaining.remove(entry.key);
+      }
+    }
+    return result;
+  }
+
+  // SELECT verb_id, value FROM verb_t9n_table WHERE verb_id IN (?) AND lang = ?
+  Future<Map<int, List<String>>> _fetchVerbTranslations(List<int> verbIds, String lang) async {
+    if (verbIds.isEmpty) return {};
+    final rows = await (database.select(database.verbTranslationTable)
+          ..where((t) => t.verbId.isIn(verbIds) & t.lang.equals(lang)))
+        .get();
+    final map = <int, List<String>>{};
+    for (final r in rows) {
+      map.putIfAbsent(r.verbId, () => []).add(r.value);
+    }
+    return map;
+  }
+
+  // SELECT verb_form_id, value FROM verb_form_t13n_table WHERE verb_form_id IN (?) AND lang = ?
+  Future<Map<int, String>> _fetchFormTransliterations(List<int> formIds, String lang) async {
+    if (formIds.isEmpty) return {};
+    final rows = await (database.select(database.verbFormTransliterationTable)
+          ..where((t) => t.verbFormId.isIn(formIds) & t.lang.equals(lang)))
+        .get();
+    final map = <int, String>{};
+    for (final r in rows) {
+      map.putIfAbsent(r.verbFormId, () => r.value);
+    }
+    return map;
+  }
+
+  // SELECT example_id, value FROM verb_form_example_t9n_table WHERE example_id IN (?) AND lang = ?
+  Future<Map<int, String>> _fetchExampleTranslations(List<int> exampleIds, String lang) async {
+    if (exampleIds.isEmpty) return {};
+    final rows = await (database.select(database.verbFormExampleTranslationTable)
+          ..where((t) => t.exampleId.isIn(exampleIds) & t.lang.equals(lang)))
+        .get();
+    final map = <int, String>{};
+    for (final r in rows) {
+      map.putIfAbsent(r.exampleId, () => r.value);
+    }
+    return map;
+  }
+
   // todo seems heavy
   Future<VerbDetailDto?> getVerbDetail(int verbId, String lang) async {
+    // SELECT * FROM verb_table
+    // INNER JOIN binyan_table ON binyan_table.id = verb_table.binyan_id
+    // INNER JOIN root_table ON root_table.id = verb_table.root_id
+    // WHERE verb_table.id = ?
     final query = database.select(database.verbTable).join([
       innerJoin(database.binyanTable, database.binyanTable.id.equalsExp(database.verbTable.binyanId)),
       innerJoin(database.rootTable, database.rootTable.id.equalsExp(database.verbTable.rootId)),
-      leftOuterJoin(
-        database.verbTranslationTable,
-        database.verbTranslationTable.verbId.equalsExp(database.verbTable.id) &
-            database.verbTranslationTable.lang.equals(lang),
-      ),
     ])
       ..where(database.verbTable.id.equals(verbId));
 
@@ -78,10 +176,15 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     final verb = row.readTable(database.verbTable);
     final binyan = row.readTable(database.binyanTable);
     final root = row.readTable(database.rootTable);
-    final translations = rows
-        .map((r) => r.readTableOrNull(database.verbTranslationTable)?.value)
-        .whereType<String>()
-        .toList();
+
+    final translationResult = await _resolveListWithFallback(
+      parentIds: [verbId],
+      lang: lang,
+      fetch: _fetchVerbTranslations,
+    );
+    final translationEntry = translationResult[verbId];
+    final translations = translationEntry?.$1 ?? const <String>[];
+    final translationsIsFallback = translationEntry?.$2 ?? false;
 
     final gizrahRows = await (database.select(database.gizrahTable).join([
       innerJoin(database.verbGizrahTable, database.verbGizrahTable.gizrahId.equalsExp(database.gizrahTable.id)),
@@ -91,20 +194,17 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
       innerJoin(database.verbPrepTable, database.verbPrepTable.prepId.equalsExp(database.prepositionTable.id)),
     ])..where(database.verbPrepTable.verbId.equals(verbId))).get();
 
-    final formRows = await (database.select(database.verbFormTable).join([
-      leftOuterJoin(
-        database.verbFormTransliterationTable,
-        database.verbFormTransliterationTable.verbFormId.equalsExp(database.verbFormTable.id) &
-            database.verbFormTransliterationTable.lang.equals(lang),
-      ),
-    ])..where(database.verbFormTable.verbId.equals(verbId))).get();
+    // SELECT * FROM verb_form_table WHERE verb_id = ?
+    final formRows = await (database.select(database.verbFormTable)
+          ..where((t) => t.verbId.equals(verbId)))
+        .get();
 
-    final formMap = <int, ({VerbFormTableData form, String? translit})>{};
-    for (final r in formRows) {
-      final f = r.readTable(database.verbFormTable);
-      final t = r.readTableOrNull(database.verbFormTransliterationTable);
-      formMap.putIfAbsent(f.id, () => (form: f, translit: t?.value));
-    }
+    final formIds = formRows.map((f) => f.id).toList();
+    final translitResult = await _resolveWithFallback(
+      parentIds: formIds,
+      lang: lang,
+      fetch: _fetchFormTransliterations,
+    );
 
     return VerbDetailDto(
       id: verb.id,
@@ -114,15 +214,20 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
       gizrahs: gizrahRows.map((r) => r.readTable(database.gizrahTable).value).toList(),
       preps: prepRows.map((r) => r.readTable(database.prepositionTable).value).toList(),
       translations: translations,
-      forms: formMap.values.map((e) => VerbFormDisplayDto(
-        id: e.form.id,
-        value: e.form.value,
-        translit: e.translit ?? '',
-        tense: Tense.values[e.form.tense],
-        person: GrammaticalPerson.values[e.form.person],
-        plurality: Plurality.values[e.form.plurality],
-        gender: GrammaticalGender.values[e.form.gender],
-      )).toList(),
+      translationsIsFallback: translationsIsFallback,
+      forms: formRows.map((f) {
+        final translit = translitResult[f.id];
+        return VerbFormDisplayDto(
+          id: f.id,
+          value: f.value,
+          translit: translit?.$1 ?? '',
+          translitIsFallback: translit?.$2 ?? false,
+          tense: Tense.values[f.tense],
+          person: GrammaticalPerson.values[f.person],
+          plurality: Plurality.values[f.plurality],
+          gender: GrammaticalGender.values[f.gender],
+        );
+      }).toList(),
     );
   }
 
@@ -136,35 +241,26 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
 
     final formIds = formRows.map((f) => f.id).toList();
 
-    // SELECT vfe.*, vfet.value
-    // FROM verb_form_example_table vfe
-    // LEFT OUTER JOIN verb_form_example_translation_table vfet
-    //   ON vfet.example_id = vfe.id AND vfet.lang = ?
-    // WHERE vfe.verb_form_id IN (?)
-    final List<TypedResult> exampleRows = await (database.select(database.verbFormExampleTable).join([
-      leftOuterJoin(
-        database.verbFormExampleTranslationTable,
-        database.verbFormExampleTranslationTable.exampleId
-            .equalsExp(database.verbFormExampleTable.id) &
-        database.verbFormExampleTranslationTable.lang.equals(lang),
-      ),
-    ])
-      ..where(database.verbFormExampleTable.verbFormId.isIn(formIds)))
+    // SELECT * FROM verb_form_example_table WHERE verb_form_id IN (?)
+    final List<VerbFormExampleTableData> exampleRows = await (database.select(database.verbFormExampleTable)
+          ..where((t) => t.verbFormId.isIn(formIds)))
         .get();
 
-    final exampleMap = <int, ({VerbFormExampleTableData ex, String translation})>{};
-    for (final r in exampleRows) {
-      final ex = r.readTable(database.verbFormExampleTable);
-      final t9n = r.readTableOrNull(database.verbFormExampleTranslationTable);
-      exampleMap.putIfAbsent(ex.id, () => (ex: ex, translation: t9n?.value ?? ''));
-    }
+    final exampleIds = exampleRows.map((e) => e.id).toList();
+    final translationResult = await _resolveWithFallback(
+      parentIds: exampleIds,
+      lang: lang,
+      fetch: _fetchExampleTranslations,
+    );
 
     final grouped = <int, List<ExampleDisplayDto>>{};
-    for (final entry in exampleMap.values) {
-      grouped.putIfAbsent(entry.ex.verbFormId, () => []).add(ExampleDisplayDto(
-        exampleId: entry.ex.id,
-        sentence: entry.ex.value,
-        translation: entry.translation,
+    for (final ex in exampleRows) {
+      final translation = translationResult[ex.id];
+      grouped.putIfAbsent(ex.verbFormId, () => []).add(ExampleDisplayDto(
+        exampleId: ex.id,
+        sentence: ex.value,
+        translation: translation?.$1 ?? '',
+        isFallback: translation?.$2 ?? false,
       ));
     }
 
@@ -252,30 +348,25 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
   }
 
   Future<List<VerbWordDto>> getVerbsByRootId(int rootId, String lang) async {
-    final query = database.select(database.verbTable).join([
-      leftOuterJoin(
-        database.verbTranslationTable,
-        database.verbTranslationTable.verbId.equalsExp(database.verbTable.id) &
-            database.verbTranslationTable.lang.equals(lang),
-      ),
-    ])
-      ..where(database.verbTable.rootId.equals(rootId));
+    // SELECT * FROM verb_table WHERE root_id = ?
+    final verbRows = await (database.select(database.verbTable)
+          ..where((t) => t.rootId.equals(rootId)))
+        .get();
 
-    final rows = await query.get();
+    final verbIds = verbRows.map((v) => v.id).toList();
+    final translationResult = await _resolveListWithFallback(
+      parentIds: verbIds,
+      lang: lang,
+      fetch: _fetchVerbTranslations,
+    );
 
-    final grouped = <int, ({VerbTableData verb, List<String> translations})>{};
-    for (final row in rows) {
-      final verb = row.readTable(database.verbTable);
-      final t9n = row.readTableOrNull(database.verbTranslationTable);
-      final entry = grouped.putIfAbsent(verb.id, () => (verb: verb, translations: []));
-      if (t9n != null) entry.translations.add(t9n.value);
-    }
-
-    return grouped.values.map((entry) {
-      final t = entry.translations;
+    return verbRows.map((verb) {
+      final entry = translationResult[verb.id];
+      final t = entry?.$1 ?? const <String>[];
+      final isFallback = entry?.$2 ?? false;
       final first = t.isEmpty ? '' : t[0];
       final label = t.length <= 1 ? first : '$first⁺${_superscript(t.length - 1)}';
-      return VerbWordDto(id: entry.verb.id, value: entry.verb.value, translation: label);
+      return VerbWordDto(id: verb.id, value: verb.value, translation: label, isFallback: isFallback);
     }).toList();
   }
 }

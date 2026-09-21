@@ -129,7 +129,12 @@ class _MainSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          WordTitle(translations: verb.translations, hebrewValue: verb.value, wordType: WordType.verb),
+          WordTitle(
+            translations: verb.translations,
+            translationsIsFallback: verb.translationsIsFallback,
+            hebrewValue: verb.value,
+            wordType: WordType.verb,
+          ),
           const SizedBox(height: 16),
         ],
       ),

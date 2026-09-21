@@ -1,5 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
+import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -62,9 +63,20 @@ class _IntroductionCardState extends State<IntroductionCard> with SingleTickerPr
                       style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.ink),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      verb.translations.isNotEmpty ? verb.translations.join(', ') : '',
-                      style: const TextStyle(fontSize: 18, color: AppColors.inkSecondary),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (verb.translations.isNotEmpty && verb.translationsIsFallback) ...[
+                          const FallbackWarningMarker(),
+                          const SizedBox(width: 4),
+                        ],
+                        Flexible(
+                          child: Text(
+                            verb.translations.isNotEmpty ? verb.translations.join(', ') : '',
+                            style: const TextStyle(fontSize: 18, color: AppColors.inkSecondary),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(

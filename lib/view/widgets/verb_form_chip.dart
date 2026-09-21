@@ -3,6 +3,7 @@ import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/widgets/bookmark_badge.dart';
+import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -111,15 +112,26 @@ class _VerbFormChipState extends State<VerbFormChip>
                         ),
                         if (widget.form.translit.isNotEmpty)
                           const SizedBox(height: 2),
-                        Text(
-                          widget.form.translit,
-                          textAlign: TextAlign.end,
-                          style: GoogleFonts.rubik(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.textSecondary,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (widget.form.translit.isNotEmpty && widget.form.translitIsFallback) ...[
+                              const FallbackWarningMarker(size: 11),
+                              const SizedBox(width: 2),
+                            ],
+                            Flexible(
+                              child: Text(
+                                widget.form.translit,
+                                textAlign: TextAlign.end,
+                                style: GoogleFonts.rubik(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w300,
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

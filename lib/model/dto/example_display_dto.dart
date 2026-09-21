@@ -24,10 +24,14 @@ class ExampleDisplayDto {
   final int exampleId;
   final String sentence;
   final String translation;
+  // True when [translation] was resolved on a fallback language rather than
+  // the one requested.
+  final bool isFallback;
 
   const ExampleDisplayDto({
     required this.exampleId,
     required this.sentence,
     required this.translation,
+    this.isFallback = false,
   });
 }
