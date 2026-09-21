@@ -64,7 +64,21 @@ Plurality pluralityFromJson(int i) => Plurality.values[i];
 
 GrammaticalGender genderFromJson(int i) => GrammaticalGender.values[i];
 
-enum AppLanguage { en, ru }
+/// `dbCode` is the sole source of the uppercase `lang` value stored in
+/// content tables (e.g. `verb_t9n_table.lang`) -- never uppercase
+/// `AppLanguage.name` ad hoc, always go through this field.
+enum AppLanguage {
+  en(dbCode: 'EN'),
+  ru(dbCode: 'RU');
+
+  const AppLanguage({required this.dbCode});
+  final String dbCode;
+
+  String get label => switch (this) {
+        AppLanguage.en => 'English',
+        AppLanguage.ru => 'Russian',
+      };
+}
 
 enum AppTheme { light, dark, auto }
 

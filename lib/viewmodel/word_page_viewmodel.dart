@@ -1,6 +1,7 @@
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/repository/user/bookmark_repository.dart';
 import 'package:almi3/model/repository/vocab/verb_repository.dart';
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/state/word_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,13 +17,13 @@ class WordPageNotifier extends Notifier<WordPageState> {
   final int _rootId;
   late VerbRepository _verbRepo;
   late BookmarkRepository _bookmarkRepo;
-
-  static const String _lang = 'EN';
+  late String _lang;
 
   @override
   WordPageState build() {
     _verbRepo = ref.watch(verbRepositoryProvider);
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
+    _lang = ref.watch(contentLangProvider);
     Future.microtask(_load);
     return const WordPageState(isLoading: true);
   }

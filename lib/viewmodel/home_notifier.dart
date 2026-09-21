@@ -6,7 +6,7 @@ import 'package:almi3/model/fsrs/lexeme_status_actions.dart' show lexemeStatusIg
 import 'package:almi3/model/fsrs/scheduled_review_service.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
-import 'package:almi3/viewmodel/session_notifier.dart' show sessionContentLang;
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,11 +66,12 @@ final knownWordsCountProvider = FutureProvider<int>((ref) async {
   final verbRepo = ref.watch(verbRepositoryProvider);
   final ids = await answerLogRepository.getLexemeProgressIdsWithAssertKnownLog();
 
+  final lang = ref.read(contentLangProvider);
   var count = 0;
   for (final id in ids) {
     final progress = await lexemeProgressRepository.getById(id);
     if (progress == null || progress.entityType != entityTypeVerb) continue;
-    final detail = await verbRepo.getVerbDetail(progress.entityId, sessionContentLang);
+    final detail = await verbRepo.getVerbDetail(progress.entityId, lang);
     if (detail == null) continue;
     count++;
   }

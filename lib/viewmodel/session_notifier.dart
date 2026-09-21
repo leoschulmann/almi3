@@ -16,10 +16,13 @@ import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Language used to render verb content in the session -- matches
-/// verb_page_viewmodel.dart's hardcoded choice (no i18n selection wired
-/// into content yet).
-const String sessionContentLang = 'EN';
+/// Live content language, sourced from [settingsProvider] -- the single
+/// point every content-lang consumer (session/practice/home/known-ignored
+/// words) reads from, so changing Settings updates content without a
+/// restart.
+final contentLangProvider = Provider<String>(
+  (ref) => ref.watch(settingsProvider.select((s) => s.language.dbCode)),
+);
 
 /// Narrowing rule (spec §"Decided (MVP format scope)"): the UI ships
 /// exactly two quiz widgets this story (mc4Recognition, typedProduction).
@@ -323,7 +326,8 @@ class SessionNotifier extends Notifier<SessionState> {
         SessionNewItem(:final entityId) => entityId,
         SessionDueItem(:final entityId) => entityId,
       };
-      final detail = await verbRepo.getVerbDetail(entityId, sessionContentLang);
+      final lang = ref.read(contentLangProvider);
+      final detail = await verbRepo.getVerbDetail(entityId, lang);
 
       var options = const <String>[];
       QuizType? overrideQuizType;
@@ -361,10 +365,11 @@ class SessionNotifier extends Notifier<SessionState> {
     final candidates = await verbRepo.getNewCandidatesOrderedByFrequency([excludeId], 12);
     candidates.shuffle(Random());
 
+    final lang = ref.read(contentLangProvider);
     final distractors = <String>[];
     for (final candidate in candidates) {
       if (distractors.length >= 3) break;
-      final detail = await verbRepo.getVerbDetail(candidate.id, sessionContentLang);
+      final detail = await verbRepo.getVerbDetail(candidate.id, lang);
       final translation = detail != null && detail.translations.isNotEmpty ? detail.translations.first : null;
       if (translation != null &&
           !correctTranslations.contains(translation) &&

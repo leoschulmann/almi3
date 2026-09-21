@@ -4,7 +4,7 @@ import 'package:almi3/model/fsrs/lexeme_selection.dart' show entityTypeVerb;
 import 'package:almi3/model/fsrs/lexeme_status_actions.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
-import 'package:almi3/viewmodel/session_notifier.dart' show sessionContentLang;
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,11 +43,12 @@ class _KnownWordsPageState extends ConsumerState<KnownWordsPage> {
 
     final ids = await answerLogRepository.getLexemeProgressIdsWithAssertKnownLog();
 
+    final lang = ref.read(contentLangProvider);
     final result = <_WordRow>[];
     for (final id in ids) {
       final progress = await lexemeProgressRepository.getById(id);
       if (progress == null || progress.entityType != entityTypeVerb) continue;
-      final detail = await verbRepo.getVerbDetail(progress.entityId, sessionContentLang);
+      final detail = await verbRepo.getVerbDetail(progress.entityId, lang);
       if (detail == null) continue;
       final translation = detail.translations.isNotEmpty ? detail.translations.first : '';
       final label = translation.isEmpty ? detail.value : '${detail.value} — $translation';

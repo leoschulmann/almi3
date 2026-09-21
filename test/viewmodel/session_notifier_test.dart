@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:almi3/core/app_settings.dart';
 import 'package:almi3/core/clock.dart';
+import 'package:almi3/core/enums.dart';
 import 'package:almi3/model/db/db_providers.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/db/vocab_db.dart';
@@ -26,6 +27,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _SettingsNotifier extends SettingsNotifier {
   final AppSettings _settings;
@@ -726,6 +728,19 @@ void main() {
       final state = await _settle(container);
       expect(state.phase, SessionPhase.error);
       expect(state.errorMessage, isNotNull);
+    });
+
+    test('setLanguage(ru) updates contentLangProvider to the RU db code', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = buildContainer(
+        extraOverrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+
+      container.read(settingsProvider.notifier).setLanguage(AppLanguage.ru);
+
+      expect(container.read(contentLangProvider), 'RU');
     });
   });
 }

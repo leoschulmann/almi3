@@ -4,6 +4,7 @@ import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/db/vocab_db.dart';
 import 'package:almi3/model/fsrs/lexeme_status_actions.dart' show lexemeStatusIgnored;
 import 'package:almi3/view/ignored_words_page.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> _seedRootAndBinyan(VocabularyDatabase db) async {
   await db.into(db.rootTable).insert(RootTableCompanion.insert(id: const Value(1), value: 'כתב', version: 1));
@@ -53,11 +55,14 @@ void main() {
   group('IgnoredWordsPage', () {
     late VocabularyDatabase contentDb;
     late UserDatabase userDb;
+    late SharedPreferences prefs;
 
     setUp(() async {
       contentDb = VocabularyDatabase(NativeDatabase.memory());
       userDb = UserDatabase(NativeDatabase.memory());
       await _seedRootAndBinyan(contentDb);
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
     });
 
     tearDown(() async {
@@ -69,6 +74,7 @@ void main() {
           overrides: [
             userDbProvider.overrideWithValue(userDb),
             appDatabaseProvider.overrideWithValue(contentDb),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: const MaterialApp(home: IgnoredWordsPage()),
         );

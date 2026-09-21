@@ -122,7 +122,7 @@ class _SettingsSheet extends ConsumerWidget {
       _SettingsGroup(children: [
         _DisclosureRow(
           label: 'Language',
-          value: s.language == AppLanguage.ru ? 'Russian' : 'English',
+          value: s.language.label,
           onTap: () => _showLanguagePicker(context, s, n),
         ),
       ]),
@@ -401,9 +401,8 @@ class _SettingsSheet extends ConsumerWidget {
       context,
       title: 'Language',
       current: s.language,
-      options: const [
-        (AppLanguage.en, 'English'),
-        (AppLanguage.ru, 'Russian'),
+      options: [
+        for (final l in AppLanguage.values) (l, l.label),
       ],
     );
     if (picked != null) n.setLanguage(picked);

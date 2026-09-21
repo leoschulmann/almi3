@@ -3,7 +3,7 @@ import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/lexeme_selection.dart' show entityTypeVerb;
 import 'package:almi3/model/fsrs/lexeme_status_actions.dart';
 import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
-import 'package:almi3/viewmodel/session_notifier.dart' show sessionContentLang;
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,10 +41,11 @@ class _IgnoredWordsPageState extends ConsumerState<IgnoredWordsPage> {
     final verbRepo = ref.read(verbRepositoryProvider);
     final rows = await lexemeProgressRepository.getByStatus(lexemeStatusIgnored);
 
+    final lang = ref.read(contentLangProvider);
     final result = <_WordRow>[];
     for (final row in rows) {
       if (row.entityType != entityTypeVerb) continue; // only verbs exist so far
-      final detail = await verbRepo.getVerbDetail(row.entityId, sessionContentLang);
+      final detail = await verbRepo.getVerbDetail(row.entityId, lang);
       if (detail == null) continue;
       final translation = detail.translations.isNotEmpty ? detail.translations.first : '';
       final label = translation.isEmpty ? detail.value : '${detail.value} — $translation';

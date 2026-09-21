@@ -5,6 +5,7 @@ import 'package:almi3/model/fsrs/lexeme_selection.dart' show entityTypeVerb;
 import 'package:almi3/model/repository/user/bookmark_repository.dart';
 import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
 import 'package:almi3/model/repository/vocab/verb_repository.dart';
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/state/verb_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,8 +21,7 @@ class VerbPageNotifier extends Notifier<VerbPageState> {
   late BookmarkRepository _bookmarkRepo;
   late LexemeProgressRepository _lexemeProgressRepo;
   late HealthService _healthService;
-
-  static const String _lang = 'EN';
+  late String _lang;
 
   @override
   VerbPageState build() {
@@ -29,6 +29,7 @@ class VerbPageNotifier extends Notifier<VerbPageState> {
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
     _lexemeProgressRepo = ref.watch(lexemeProgressRepositoryProvider);
     _healthService = ref.watch(healthServiceProvider);
+    _lang = ref.watch(contentLangProvider);
     Future.microtask(_load);
     return const VerbPageState(isLoading: true);
   }
