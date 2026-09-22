@@ -71,16 +71,17 @@ class App extends ConsumerWidget {
           loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (error, stackTrace) {
             debugPrint('onboardingGateProvider failed: $error\n$stackTrace');
+            final l10n = AppLocalizations.of(context)!;
             return Scaffold(
               body: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Something went wrong loading your data.'),
+                    Text(l10n.loadDataErrorMessage),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: () => ref.invalidate(onboardingGateProvider),
-                      child: const Text('Retry'),
+                      child: Text(l10n.retryButton),
                     ),
                   ],
                 ),
@@ -214,14 +215,14 @@ class _CustomBottomNav extends StatelessWidget {
     required this.onBrowseLongPress,
   });
 
-  static const _items = [
-    (icon: Icons.spa, label: 'Roots'),
-    (icon: Icons.menu_book, label: 'Learn'),
-    (icon: Icons.bolt, label: 'Quiz'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final items = [
+      (icon: Icons.spa, label: l10n.rootsTitle),
+      (icon: Icons.menu_book, label: l10n.learnTitle),
+      (icon: Icons.bolt, label: l10n.quizTitle),
+    ];
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     const selectedColor = AppColors.tekhelet;
     const unselectedColor = AppColors.inkSecondary;
@@ -239,8 +240,8 @@ class _CustomBottomNav extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.only(bottom: bottomPadding),
           child: Row(
-            children: List.generate(_items.length, (i) {
-              final item = _items[i];
+            children: List.generate(items.length, (i) {
+              final item = items[i];
               final isSelected = selectedIndex == i;
               final color = isSelected ? selectedColor : unselectedColor;
               final isBrowse = i == 0;

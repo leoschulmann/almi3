@@ -6,6 +6,7 @@ import 'package:almi3/model/fsrs/answer_log_codes.dart';
 import 'package:almi3/view/known_words_page.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -90,7 +91,12 @@ void main() {
             appDatabaseProvider.overrideWithValue(contentDb),
             sharedPreferencesProvider.overrideWithValue(prefs),
           ],
-          child: const MaterialApp(home: KnownWordsPage()),
+          child: MaterialApp(
+            home: const KnownWordsPage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         );
 
     testWidgets('empty list shows the empty-state message (matrix: "Список пуст")', (tester) async {

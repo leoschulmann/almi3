@@ -1,5 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class NiqqudBtn extends StatelessWidget {
@@ -8,7 +9,7 @@ class NiqqudBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AdaptiveIconButton(
-      tooltip: 'Toggle niqqud',
+      tooltip: AppLocalizations.of(context)!.toggleNiqqudTooltip,
       onPressed: () {
         // TODO: toggle niqqud
       },

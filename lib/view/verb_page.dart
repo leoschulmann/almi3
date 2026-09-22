@@ -2,6 +2,7 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/example_page.dart';
 import 'package:almi3/view/widgets/almi_app_bar.dart';
@@ -27,7 +28,7 @@ class VerbPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AlmiAppBar(
-        title: Text('verb - $rootValue', style: const TextStyle(fontSize: 16)),
+        title: Text(AppLocalizations.of(context)!.verbPageTitle(rootValue), style: const TextStyle(fontSize: 16)),
       ),
       body: _buildBody(context, ref, state),
     );
@@ -35,9 +36,11 @@ class VerbPage extends ConsumerWidget {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, VerbPageState state) {
     if (state.isLoading) return const Center(child: CircularProgressIndicator());
-    if (state.errMsg != null) return Center(child: Text('Error: ${state.errMsg}'));
+    if (state.errMsg != null) {
+      return Center(child: Text(AppLocalizations.of(context)!.errorWithMessage(state.errMsg!)));
+    }
     final verb = state.verb;
-    if (verb == null) return const Center(child: Text('Not found'));
+    if (verb == null) return Center(child: Text(AppLocalizations.of(context)!.notFound));
 
     return SingleChildScrollView(
       child: Column(

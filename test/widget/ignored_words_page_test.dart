@@ -6,6 +6,7 @@ import 'package:almi3/model/fsrs/lexeme_status_actions.dart' show lexemeStatusIg
 import 'package:almi3/view/ignored_words_page.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +77,12 @@ void main() {
             appDatabaseProvider.overrideWithValue(contentDb),
             sharedPreferencesProvider.overrideWithValue(prefs),
           ],
-          child: const MaterialApp(home: IgnoredWordsPage()),
+          child: MaterialApp(
+            home: const IgnoredWordsPage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         );
 
     testWidgets('empty list shows the empty-state message (matrix: "Список пуст")', (tester) async {

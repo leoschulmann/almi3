@@ -8,6 +8,7 @@ import 'package:almi3/view/widgets/root_search_field.dart';
 import 'package:almi3/view/word_page.dart';
 import 'package:almi3/viewmodel/root_list_viewmodel.dart';
 import 'package:almi3/viewmodel/state/root_list_page_state.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,7 +73,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
     }
 
     if (state.errMsg != null) {
-      return Center(child: Text('Error: ${state.errMsg}'));
+      return Center(child: Text(AppLocalizations.of(context)!.errorWithMessage(state.errMsg!)));
     }
 
     return RefreshIndicator(
@@ -87,15 +88,16 @@ class _RootListPageState extends ConsumerState<RootListPage> {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            _buildTitleAndSearchSliver(),
-            _buildRootCardListSliver(state),
+            _buildTitleAndSearchSliver(context),
+            _buildRootCardListSliver(context, state),
           ],
         ),
       ),
     );
   }
 
-  SliverAppBar _buildTitleAndSearchSliver() {
+  SliverAppBar _buildTitleAndSearchSliver(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SliverAppBar(
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -110,14 +112,14 @@ class _RootListPageState extends ConsumerState<RootListPage> {
       title: AnimatedOpacity(
         opacity: _titleVisible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 150),
-        child: const Text(
-          'Roots',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+        child: Text(
+          l10n.rootsTitle,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
         ),
       ),
       actions: [
         AdaptiveIconButton(
-          tooltip: 'Toggle niqqud',
+          tooltip: l10n.toggleNiqqudTooltip,
           onPressed: () {/* TODO: toggle niqqud */},
           icon: const Text(
             'אָ',
@@ -125,7 +127,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
           ),
         ),
         AdaptiveIconButton(
-          tooltip: 'Settings',
+          tooltip: l10n.settingsTooltip,
           onPressed: () => showSettingsSheet(context),
           icon: const Icon(Icons.settings_outlined, size: 23, color: AppColors.tekhelet),
         ),
@@ -147,9 +149,9 @@ class _RootListPageState extends ConsumerState<RootListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: _toolbarPlaceholderHeight),
-                const Text(
-                  'Roots',
-                  style: TextStyle(
+                Text(
+                  l10n.rootsTitle,
+                  style: const TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.6,
@@ -178,10 +180,10 @@ class _RootListPageState extends ConsumerState<RootListPage> {
   }
 
 
-  Widget _buildRootCardListSliver(RootListPageState state) {
+  Widget _buildRootCardListSliver(BuildContext context, RootListPageState state) {
     if (state.roots.isEmpty) {
-      return const SliverFillRemaining(
-          child: Center(child: Text('No roots — try syncing first.'))
+      return SliverFillRemaining(
+          child: Center(child: Text(AppLocalizations.of(context)!.noRootsTrySyncing))
       );
     }
     else {

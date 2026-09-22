@@ -1,4 +1,5 @@
 import 'package:almi3/core/enums.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:almi3/view/widgets/word_title.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
@@ -23,6 +24,9 @@ void main() {
             sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: MaterialApp(
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: SizedBox(
                 width: 300,

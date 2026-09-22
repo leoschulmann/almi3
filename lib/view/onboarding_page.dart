@@ -1,6 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/viewmodel/onboarding_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +18,7 @@ class OnboardingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
@@ -27,37 +29,37 @@ class OnboardingPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              const Text(
-                'Welcome to ALMI',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink),
+              Text(
+                l10n.onboardingWelcome,
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Pick how often you want to review.',
-                style: TextStyle(fontSize: 15, color: AppColors.inkSecondary),
+              Text(
+                l10n.onboardingSubtitle,
+                style: const TextStyle(fontSize: 15, color: AppColors.inkSecondary),
               ),
               const SizedBox(height: 32),
 
-              const Text(
-                'Decks',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.inkSecondary),
+              Text(
+                l10n.decksSectionTitle,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.inkSecondary),
               ),
               const SizedBox(height: 8),
               _DeckTile(
-                title: 'All words',
-                subtitle: 'The full ALMI vocabulary',
+                title: l10n.allWordsDeckTitle,
+                subtitle: l10n.allWordsDeckSubtitle,
                 selected: state.selectedDeckIds.contains(kDefaultDeckId),
                 onChanged: (v) => notifier.toggleDeck(kDefaultDeckId, v),
               ),
 
               const SizedBox(height: 32),
-              const Text(
-                'Pace',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.inkSecondary),
+              Text(
+                l10n.paceSectionTitle,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.inkSecondary),
               ),
               const SizedBox(height: 8),
               AdaptiveSegmentedControl<ReviewIntensity>(
-                segments: ReviewIntensity.values.map((v) => (v, intensityLabel(v))).toList(),
+                segments: ReviewIntensity.values.map((v) => (v, intensityLabel(v, l10n))).toList(),
                 selected: state.intensity,
                 onChanged: notifier.setIntensity,
               ),
@@ -65,7 +67,7 @@ class OnboardingPage extends ConsumerWidget {
               if (state.error != null) ...[
                 const SizedBox(height: 16),
                 Text(
-                  'Something went wrong. Please try again.',
+                  l10n.onboardingGenericError,
                   style: const TextStyle(fontSize: 13, color: Color(0xFFFF3B30)),
                 ),
               ],
@@ -92,7 +94,7 @@ class OnboardingPage extends ConsumerWidget {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Start learning', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      : Text(l10n.startLearning, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(height: 24),

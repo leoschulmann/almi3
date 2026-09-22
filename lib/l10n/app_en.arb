@@ -3,5 +3,243 @@
   "appTitle": "almi yaha",
   "@appTitle": {
     "description": "Application title, placeholder key proving the intl/ARB wiring works end to end; real string migration happens in story 4."
-  }
+  },
+
+  "languageEnglish": "English",
+  "languageRussian": "Russian",
+  "intensityRelaxed": "Relaxed",
+  "intensityNormal": "Normal",
+  "intensityIntense": "Intense",
+
+  "cancel": "Cancel",
+  "done": "Done",
+  "undo": "Undo",
+
+  "newLimitForkCopy": "Goal reached 🎉 — Continue with new or practice what you've started?",
+  "backlogWelcomeCopy": "It's been a while — let's start with a small batch, no rush.",
+
+  "sessionTitle": "Session",
+  "markedAsKnown": "Marked as known",
+  "removedFromLearning": "Removed from learning",
+  "nothingToReviewToday": "Nothing to review — all done for today",
+  "back": "Back",
+  "continueWithNew": "Continue with new",
+  "practiceVerbAction": "Practice",
+  "start": "Start",
+  "genericErrorMessage": "Something went wrong. Please try again later.",
+
+  "appName": "ALMI",
+  "settingsTooltip": "Settings",
+  "settingsSheetTitle": "Settings",
+  "studyStatusCounts": "{dueCount} to review · {newCount} new",
+  "@studyStatusCounts": {
+    "placeholders": {
+      "dueCount": {"type": "int"},
+      "newCount": {"type": "int"}
+    }
+  },
+  "loadingEllipsis": "...",
+  "studyStatusError": "— to review · — new",
+  "studyAction": "Study",
+  "practiceTitle": "Practice",
+  "noProgressYet": "Start studying to see your progress",
+  "healthBucketSummary": "{strongCount} {strongWord} · {weakCount} {weakWord}",
+  "@healthBucketSummary": {
+    "placeholders": {
+      "strongCount": {"type": "int"},
+      "strongWord": {"type": "String"},
+      "weakCount": {"type": "int"},
+      "weakWord": {"type": "String"}
+    }
+  },
+  "dataUnavailable": "—",
+
+  "emptyPracticePool": "Nothing to practice yet — start learning words in a session",
+
+  "ignoredWordsTitle": "Removed words",
+  "knownWordsTitle": "Known words",
+  "noIgnoredWords": "No removed words",
+  "noKnownWords": "No known words",
+  "returnToLearning": "Return to learning",
+
+  "gotIt": "Got it",
+  "iKnowIt": "I know it",
+  "ignoreAction": "Ignore",
+
+  "correctAnswer": "Correct",
+  "incorrectAnswer": "Incorrect",
+  "wordHealthUnknown": "Word health: —",
+  "wordHealthGrew": "Word health improved",
+  "wordHealthPercent": "Word health: {percent}%",
+  "@wordHealthPercent": {
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "next": "Next",
+
+  "submitAnswer": "Submit",
+
+  "generalSection": "General",
+  "appearanceSection": "Appearance",
+  "practiceSection": "Practice",
+  "audioSection": "Audio",
+  "storageSyncSection": "Storage & sync",
+  "aboutSection": "About",
+  "languageLabel": "Language",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeAuto": "Auto",
+  "appDisplayFont": "App display font",
+  "appFontPickerTitle": "App font",
+  "showTransliteration": "Show transliteration",
+  "showTransliterationSub": "Latin spelling beneath Hebrew words",
+  "disableRootParallax": "Disable root parallax",
+  "disableRootParallaxSub": "Stops the watermark drift on cards",
+  "reviewIntensityLabel": "Review intensity",
+  "dailyReminder": "Daily reminder",
+  "dailyReminderSub": "A nudge to keep words fresh",
+  "reminderTimeLabel": "Reminder time",
+  "quizFont": "Quiz font",
+  "fontsCount": "{count} fonts",
+  "@fontsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "autoplayAudio": "Autoplay audio",
+  "autoplayAudioSub": "Play a word when it opens",
+  "wifiOnlyDownloads": "Download over Wi-Fi only",
+  "syncNow": "Sync now",
+  "dictionaryLabel": "Dictionary",
+  "audioCacheLabel": "Audio cache",
+  "clearAudioCache": "Clear audio cache",
+  "removedCount": "Removed: {count}",
+  "@removedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "removedCountLoading": "Removed: …",
+  "removedCountError": "Removed: —",
+  "knownCount": "Known words: {count}",
+  "@knownCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "knownCountLoading": "Known words: …",
+  "knownCountError": "Known words: —",
+  "resetAllProgress": "Reset all progress",
+  "rateApp": "Rate ALMI",
+  "sendFeedback": "Send feedback",
+  "privacyPolicy": "Privacy policy",
+  "fontLicenses": "Font licenses",
+  "appVersionFooter": "ALMI · version 1.0",
+  "neverSynced": "Never synced",
+  "lastSyncedJustNow": "Last synced just now",
+  "lastSyncedMinutesAgo": "Last synced {minutes}m ago",
+  "@lastSyncedMinutesAgo": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "lastSyncedTodayAt": "Last synced today, {time}",
+  "@lastSyncedTodayAt": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "lastSyncedOnDate": "Last synced {month} {day}",
+  "@lastSyncedOnDate": {
+    "placeholders": {
+      "month": {"type": "String"},
+      "day": {"type": "int"}
+    }
+  },
+  "couldNotSaveIntensity": "Could not save review intensity. Please try again.",
+  "resetProgressTitle": "Reset all progress?",
+  "resetProgressMessage": "This will delete all your learning history and word health data. This cannot be undone.",
+  "resetProgressConfirm": "Reset",
+  "monthJan": "Jan",
+  "monthFeb": "Feb",
+  "monthMar": "Mar",
+  "monthApr": "Apr",
+  "monthMay": "May",
+  "monthJun": "Jun",
+  "monthJul": "Jul",
+  "monthAug": "Aug",
+  "monthSep": "Sep",
+  "monthOct": "Oct",
+  "monthNov": "Nov",
+  "monthDec": "Dec",
+
+  "onboardingWelcome": "Welcome to ALMI",
+  "onboardingSubtitle": "Pick how often you want to review.",
+  "decksSectionTitle": "Decks",
+  "allWordsDeckTitle": "All words",
+  "allWordsDeckSubtitle": "The full ALMI vocabulary",
+  "paceSectionTitle": "Pace",
+  "onboardingGenericError": "Something went wrong. Please try again.",
+  "startLearning": "Start learning",
+
+  "toggleNiqqudTooltip": "Toggle niqqud",
+  "errorWithMessage": "Error: {errMsg}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "errMsg": {"type": "String"}
+    }
+  },
+  "rootsTitle": "Roots",
+  "learnTitle": "Learn",
+  "quizTitle": "Quiz",
+  "verbsTitle": "Verbs",
+  "nounsTitle": "Nouns",
+  "adjectivesTitle": "Adjectives",
+  "noRootsTrySyncing": "No roots — try syncing first.",
+  "searchRootsHint": "Search roots",
+  "allRootsLabel": "All roots",
+  "filterAll": "All",
+  "filterSaved": "Saved",
+  "filterToReview": "To review",
+  "examplesForCount": "examples for ({count}) {verbValue}",
+  "@examplesForCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "verbValue": {"type": "String"}
+    }
+  },
+  "noExamplesForFormYet": "No examples for this form yet",
+  "noExamplesFound": "No examples found",
+  "syncPageTitle": "Sync",
+  "synchronizingEllipsis": "Synchronizing...",
+  "syncErrorTitle": "Error",
+  "successfullySynchronized": "Successfully synchronized",
+  "insertedLabel": "Inserted:",
+  "updatedLabel": "Updated:",
+  "skippedLabel": "Skipped:",
+  "totalItemsCount": "Total: {total} items",
+  "@totalItemsCount": {
+    "placeholders": {
+      "total": {"type": "int"}
+    }
+  },
+  "readyToSynchronize": "Ready to synchronize",
+  "synchronizeButton": "Synchronize",
+  "verbPageTitle": "verb - {rootValue}",
+  "@verbPageTitle": {
+    "placeholders": {
+      "rootValue": {"type": "String"}
+    }
+  },
+  "notFound": "Not found",
+  "noWordsForRoot": "No words for this root yet.",
+  "adjectivesPageBody": "Adjectives Page",
+  "nounsPageBody": "Nouns Page",
+  "learnPageBody": "Learn Page",
+  "quizPageBody": "Quiz Page",
+  "verbsPageBody": "Verbs Page",
+  "fallbackWarningMessage": "Shown in another language",
+  "loadDataErrorMessage": "Something went wrong loading your data.",
+  "retryButton": "Retry"
 }

@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
@@ -60,6 +61,7 @@ class _QuizTypedProductionState extends State<QuizTypedProduction> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final translation = widget.verb.translations.isNotEmpty ? widget.verb.translations.first : '';
 
     return Column(
@@ -90,17 +92,17 @@ class _QuizTypedProductionState extends State<QuizTypedProduction> {
         const SizedBox(height: 16),
         Semantics(
           button: true,
-          label: 'Ответить',
+          label: l10n.submitAnswer,
           child: GestureDetector(
             onTap: _submit,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(color: AppColors.tekhelet, borderRadius: BorderRadius.circular(14)),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'Ответить',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                  l10n.submitAnswer,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
               ),
             ),

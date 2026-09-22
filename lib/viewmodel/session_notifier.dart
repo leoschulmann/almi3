@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:almi3/core/engine_config.dart';
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/health.dart';
 import 'package:almi3/model/fsrs/lexeme_introduction.dart';
@@ -87,13 +88,17 @@ List<SessionItem> interleaveSessionQueue(List<SessionItem> due, List<SessionItem
 enum SessionPhase { loading, empty, ready, reacting, newLimitFork, backlogWelcome, complete, error }
 
 /// §9.3's exact copy for the new-limit fork -- shared by the widget and its
-/// tests so the literal is never duplicated across files.
-const String newLimitForkCopy = 'Цель выполнена 🎉 — Продолжить с новыми или потренировать начатые?';
+/// tests so the literal is never duplicated across files. Subject to the
+/// currently selected UI language -- callers must pass the
+/// [AppLocalizations] resolved from the live `BuildContext`.
+String newLimitForkCopy(AppLocalizations l10n) => l10n.newLimitForkCopy;
 
 /// Debt-backlog welcome copy (story 7): shown once before the first card
 /// when the due queue is a "naves" (> [backlogThreshold]). Deliberately
 /// contains no raw numbers (due-count, backlog size, batch index) -- §"Always".
-const String backlogWelcomeCopy = 'Давно не заходили — начнём с небольшой порции, без спешки.';
+/// Subject to the currently selected UI language -- callers must pass the
+/// [AppLocalizations] resolved from the live `BuildContext`.
+String backlogWelcomeCopy(AppLocalizations l10n) => l10n.backlogWelcomeCopy;
 
 /// Health read once before and once after a due-card answer (§11, boundaries)
 /// -- the diff drives the visible reaction. Never a UI-side recompute.

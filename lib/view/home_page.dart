@@ -1,5 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
 import 'package:almi3/view/settings_page.dart';
@@ -19,6 +20,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(homeStatusProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
@@ -32,13 +34,13 @@ class HomePage extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'ALMI',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink),
+                  Text(
+                    l10n.appName,
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                   IconButton(
                     icon: const Icon(Icons.settings_outlined, color: AppColors.inkSecondary),
-                    tooltip: 'Settings',
+                    tooltip: l10n.settingsTooltip,
                     onPressed: () => showSettingsSheet(context),
                   ),
                 ],
@@ -47,9 +49,9 @@ class HomePage extends ConsumerWidget {
 
               _StudyButton(
                 statusText: statusAsync.when(
-                  data: (status) => '${status.dueCount} к повторению · ${status.newCount} новых',
-                  loading: () => '...',
-                  error: (_, _) => '— к повторению · — новых',
+                  data: (status) => l10n.studyStatusCounts(status.dueCount, status.newCount),
+                  loading: () => l10n.loadingEllipsis,
+                  error: (_, _) => l10n.studyStatusError,
                 ),
                 onTap: () {
                   Navigator.of(context)
@@ -129,9 +131,10 @@ class _StudyButtonState extends State<_StudyButton> with SingleTickerProviderSta
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Semantics(
       button: true,
-      label: 'Учиться',
+      label: l10n.studyAction,
       child: GestureDetector(
         onTap: () {
           HapticFeedback.mediumImpact();
@@ -150,9 +153,9 @@ class _StudyButtonState extends State<_StudyButton> with SingleTickerProviderSta
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Учиться',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+                Text(
+                  l10n.studyAction,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -177,9 +180,10 @@ class _PracticeDoor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Semantics(
       button: true,
-      label: 'Тренировка',
+      label: l10n.practiceTitle,
       child: GestureDetector(
       onTap: onTap,
       child: Container(
@@ -190,15 +194,15 @@ class _PracticeDoor extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.hairline),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Expanded(
               child: Text(
-                'Тренировка',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+                l10n.practiceTitle,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.inkSecondary),
+            const Icon(Icons.chevron_right, color: AppColors.inkSecondary),
           ],
         ),
       ),
@@ -228,12 +232,16 @@ class _ProgressShowcase extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(progressStatusProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     final text = progressAsync.when(
       data: (status) {
         if (status.strongCount == 0 && status.weakCount == 0) {
-          return 'Начните заниматься, чтобы увидеть прогресс';
+          return l10n.noProgressYet;
         }
+        // _pluralizeRu itself stays untouched (frozen scope decision, story
+        // 4) -- its RU word forms are only meaningful in the ru locale; the
+        // surrounding template is ARB-ized with {count} placeholders.
         final strongWord = _pluralizeRu(
           status.strongCount,
           one: 'крепкое',
@@ -246,10 +254,10 @@ class _ProgressShowcase extends ConsumerWidget {
           few: 'слабых',
           many: 'слабых',
         );
-        return '${status.strongCount} $strongWord · ${status.weakCount} $weakWord';
+        return l10n.healthBucketSummary(status.strongCount, strongWord, status.weakCount, weakWord);
       },
-      loading: () => '...',
-      error: (_, _) => '—',
+      loading: () => l10n.loadingEllipsis,
+      error: (_, _) => l10n.dataUnavailable,
     );
 
     return Container(

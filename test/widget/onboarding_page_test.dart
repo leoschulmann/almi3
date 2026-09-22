@@ -2,6 +2,7 @@ import 'package:almi3/model/db/db_providers.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/view/onboarding_page.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,12 @@ void main() {
             userDbProvider.overrideWithValue(testUserDb),
             sharedPreferencesProvider.overrideWithValue(prefs),
           ],
-          child: const MaterialApp(home: OnboardingPage()),
+          child: MaterialApp(
+            home: const OnboardingPage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         );
 
     testWidgets('never shows "retention" or a raw retention number', (tester) async {

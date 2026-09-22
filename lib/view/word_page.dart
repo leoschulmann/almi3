@@ -1,5 +1,6 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/view/verb_page.dart';
 import 'package:almi3/view/widgets/almi_app_bar.dart';
@@ -39,13 +40,13 @@ class WordPage extends ConsumerWidget {
 
     if (state.errMsg != null) {
       return Center(
-        child: Text('Error: ${state.errMsg}', style: Theme.of(context).textTheme.bodyLarge),
+        child: Text(AppLocalizations.of(context)!.errorWithMessage(state.errMsg!), style: Theme.of(context).textTheme.bodyLarge),
       );
     }
 
     if (state.words.isEmpty) {
       return Center(
-        child: Text('No words for this root yet.', style: Theme.of(context).textTheme.bodyLarge),
+        child: Text(AppLocalizations.of(context)!.noWordsForRoot, style: Theme.of(context).textTheme.bodyLarge),
       );
     }
 

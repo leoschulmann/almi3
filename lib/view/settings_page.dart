@@ -3,6 +3,7 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/app_settings.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/font_picker_page.dart';
 import 'package:almi3/view/ignored_words_page.dart';
 import 'package:almi3/view/known_words_page.dart';
@@ -103,48 +104,49 @@ class _SettingsSheet extends ConsumerWidget {
     AppSettings s,
     SettingsNotifier n,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final ignoredCountAsync = ref.watch(ignoredWordsCountProvider);
     final ignoredLabel = ignoredCountAsync.when(
-      data: (count) => 'Убрано: $count',
-      loading: () => 'Убрано: …',
-      error: (_, _) => 'Убрано: —',
+      data: (count) => l10n.removedCount(count),
+      loading: () => l10n.removedCountLoading,
+      error: (_, _) => l10n.removedCountError,
     );
     final knownCountAsync = ref.watch(knownWordsCountProvider);
     final knownLabel = knownCountAsync.when(
-      data: (count) => 'Известные слова: $count',
-      loading: () => 'Известные слова: …',
-      error: (_, _) => 'Известные слова: —',
+      data: (count) => l10n.knownCount(count),
+      loading: () => l10n.knownCountLoading,
+      error: (_, _) => l10n.knownCountError,
     );
 
     return [
       // ── General ──────────────────────────────────────────────────────────
-      _SectionHeader('General'),
+      _SectionHeader(l10n.generalSection),
       _SettingsGroup(children: [
         _DisclosureRow(
-          label: 'Language',
-          value: s.language.label,
+          label: l10n.languageLabel,
+          value: s.language.label(l10n),
           onTap: () => _showLanguagePicker(context, s, n),
         ),
       ]),
 
       // ── Appearance ───────────────────────────────────────────────────────
-      _SectionHeader('Appearance'),
+      _SectionHeader(l10n.appearanceSection),
       _SettingsGroup(children: [
         // Theme segmented control — TODO: apply theme live
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: AdaptiveSegmentedControl<AppTheme>(
-            segments: const [
-              (AppTheme.light, 'Light'),
-              (AppTheme.dark, 'Dark'),
-              (AppTheme.auto, 'Auto'),
+            segments: [
+              (AppTheme.light, l10n.themeLight),
+              (AppTheme.dark, l10n.themeDark),
+              (AppTheme.auto, l10n.themeAuto),
             ],
             selected: s.theme,
             onChanged: n.setTheme,
           ),
         ),
         _DisclosureRow(
-          label: 'App display font',
+          label: l10n.appDisplayFont,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -160,7 +162,7 @@ class _SettingsSheet extends ConsumerWidget {
           ),
           onTap: () => _pushFontPicker(
             context,
-            title: 'App font',
+            title: l10n.appFontPickerTitle,
             fonts: kAppFonts,
             selected: [s.appFont],
             multiSelect: false,
@@ -168,40 +170,40 @@ class _SettingsSheet extends ConsumerWidget {
           ),
         ),
         _ToggleRow(
-          label: 'Show transliteration',
-          subLabel: 'Latin spelling beneath Hebrew words',
+          label: l10n.showTransliteration,
+          subLabel: l10n.showTransliterationSub,
           value: s.showTransliteration,
           onChanged: n.setShowTransliteration,
         ),
         _ToggleRow(
-          label: 'Disable root parallax',
-          subLabel: 'Stops the watermark drift on cards',
+          label: l10n.disableRootParallax,
+          subLabel: l10n.disableRootParallaxSub,
           value: s.disableRootParallax,
           onChanged: n.setDisableRootParallax,
         ),
       ]),
 
       // ── Practice ─────────────────────────────────────────────────────────
-      _SectionHeader('Practice'),
+      _SectionHeader(l10n.practiceSection),
       _SettingsGroup(children: [
         _DisclosureRow(
-          label: 'Review intensity',
-          value: intensityLabel(s.reviewIntensity),
+          label: l10n.reviewIntensityLabel,
+          value: intensityLabel(s.reviewIntensity, l10n),
           onTap: () => _showIntensityPicker(context, s, n),
         ),
         _ToggleRow(
-          label: 'Daily reminder',
-          subLabel: 'A nudge to keep words fresh',
+          label: l10n.dailyReminder,
+          subLabel: l10n.dailyReminderSub,
           value: s.dailyReminder,
           onChanged: n.setDailyReminder,
         ),
         _DisclosureRow(
-          label: 'Reminder time',
+          label: l10n.reminderTimeLabel,
           value: s.reminderTime.format(context),
           onTap: () => _showTimePicker(context, s, n),
         ),
         _DisclosureRow(
-          label: 'Quiz font',
+          label: l10n.quizFont,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -214,14 +216,14 @@ class _SettingsSheet extends ConsumerWidget {
               Text(
                 s.quizFonts.length == 1
                     ? s.quizFonts.first.split(' ').take(2).join(' ')
-                    : '${s.quizFonts.length} fonts',
+                    : l10n.fontsCount(s.quizFonts.length),
                 style: const TextStyle(fontSize: 16, color: AppColors.inkSecondary),
               ),
             ],
           ),
           onTap: () => _pushFontPicker(
             context,
-            title: 'Quiz font',
+            title: l10n.quizFont,
             fonts: kQuizFonts,
             selected: s.quizFonts,
             multiSelect: true,
@@ -231,17 +233,17 @@ class _SettingsSheet extends ConsumerWidget {
       ]),
 
       // ── Audio ─────────────────────────────────────────────────────────────
-      _SectionHeader('Audio'),
+      _SectionHeader(l10n.audioSection),
       _SettingsGroup(children: [
         _ToggleRow(
-          label: 'Autoplay audio',
-          subLabel: 'Play a word when it opens',
+          label: l10n.autoplayAudio,
+          subLabel: l10n.autoplayAudioSub,
           value: s.autoplayAudio,
           leadingIcon: _LeadIcon(icon: Icons.volume_up_rounded, color: const Color(0xFFFF2D55)),
           onChanged: n.setAutoplayAudio,
         ),
         _ToggleRow(
-          label: 'Download over Wi-Fi only',
+          label: l10n.wifiOnlyDownloads,
           value: s.wifiOnlyDownloads,
           leadingIcon: _LeadIcon(icon: Icons.wifi_rounded, color: const Color(0xFF5B9BFF)),
           onChanged: n.setWifiOnlyDownloads,
@@ -249,26 +251,26 @@ class _SettingsSheet extends ConsumerWidget {
       ]),
 
       // ── Storage & sync ────────────────────────────────────────────────────
-      _SectionHeader('Storage & sync'),
+      _SectionHeader(l10n.storageSyncSection),
       _SettingsGroup(children: [
         _DisclosureRow(
-          label: 'Sync now',
-          subLabel: _syncSubLabel(s.lastSyncedAt),
+          label: l10n.syncNow,
+          subLabel: _syncSubLabel(s.lastSyncedAt, l10n),
           leadingIcon: _LeadIcon(icon: Icons.sync_rounded, color: const Color(0xFF34C759)),
           onTap: () => _openSync(context),
         ),
         _ValueRow(
-          label: 'Dictionary',
+          label: l10n.dictionaryLabel,
           value: '48.2 MB',
           leadingIcon: _LeadIcon(icon: Icons.storage_rounded, color: const Color(0xFF5B9BFF)),
         ),
         _ValueRow(
-          label: 'Audio cache',
+          label: l10n.audioCacheLabel,
           value: '112 MB',
           leadingIcon: _LeadIcon(icon: Icons.access_time_rounded, color: const Color(0xFFFF9F0A)),
         ),
         _ActionRow(
-          label: 'Clear audio cache',
+          label: l10n.clearAudioCache,
           destructive: true,
           leadingIcon: _LeadIcon(icon: Icons.delete_outline_rounded, color: const Color(0xFFFF3B30)),
           onTap: () {/* TODO: clear audio cache */},
@@ -301,7 +303,7 @@ class _SettingsSheet extends ConsumerWidget {
       const SizedBox(height: 18),
       _SettingsGroup(children: [
         _ActionRow(
-          label: 'Reset all progress',
+          label: l10n.resetAllProgress,
           destructive: true,
           leadingIcon: _LeadIcon(icon: Icons.restart_alt_rounded, color: const Color(0xFFFF9500)),
           onTap: () => _confirmReset(context),
@@ -309,50 +311,54 @@ class _SettingsSheet extends ConsumerWidget {
       ]),
 
       // ── About ─────────────────────────────────────────────────────────────
-      _SectionHeader('About'),
+      _SectionHeader(l10n.aboutSection),
       _SettingsGroup(children: [
         _DisclosureRow(
-          label: 'Rate ALMI',
+          label: l10n.rateApp,
           leadingIcon: _LeadIcon(icon: Icons.star_rounded, color: const Color(0xFFFFCC00)),
           onTap: () {/* TODO */},
         ),
         _DisclosureRow(
-          label: 'Send feedback',
+          label: l10n.sendFeedback,
           leadingIcon: _LeadIcon(icon: Icons.chat_bubble_rounded, color: const Color(0xFF34C759)),
           onTap: () {/* TODO */},
         ),
         _DisclosureRow(
-          label: 'Privacy policy',
+          label: l10n.privacyPolicy,
           leadingIcon: _LeadIcon(icon: Icons.lock_rounded, color: const Color(0xFF8E8E93)),
           onTap: () {/* TODO */},
         ),
         _DisclosureRow(
-          label: 'Font licenses',
+          label: l10n.fontLicenses,
           leadingIcon: _LeadIcon(icon: Icons.description_rounded, color: const Color(0xFF5B9BFF)),
           onTap: () {/* TODO */},
         ),
       ]),
 
-      const Padding(
-        padding: EdgeInsets.only(top: 22, bottom: 6),
+      Padding(
+        padding: const EdgeInsets.only(top: 22, bottom: 6),
         child: Text(
-          'ALMI · version 1.0',
+          l10n.appVersionFooter,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: Color(0xFFAEAEB2)),
+          style: const TextStyle(fontSize: 12, color: Color(0xFFAEAEB2)),
         ),
       ),
     ];
   }
 
-  String _syncSubLabel(DateTime? lastSynced) {
-    if (lastSynced == null) return 'Never synced';
+  String _syncSubLabel(DateTime? lastSynced, AppLocalizations l10n) {
+    if (lastSynced == null) return l10n.neverSynced;
     final now = DateTime.now();
     final diff = now.difference(lastSynced);
-    if (diff.inMinutes < 1) return 'Last synced just now';
-    if (diff.inHours < 1) return 'Last synced ${diff.inMinutes}m ago';
-    if (diff.inDays == 0) return 'Last synced today, ${_formatTime(lastSynced)}';
-    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return 'Last synced ${months[lastSynced.month - 1]} ${lastSynced.day}';
+    if (diff.inMinutes < 1) return l10n.lastSyncedJustNow;
+    if (diff.inHours < 1) return l10n.lastSyncedMinutesAgo(diff.inMinutes);
+    if (diff.inDays == 0) return l10n.lastSyncedTodayAt(_formatTime(lastSynced));
+    final months = [
+      l10n.monthJan, l10n.monthFeb, l10n.monthMar, l10n.monthApr,
+      l10n.monthMay, l10n.monthJun, l10n.monthJul, l10n.monthAug,
+      l10n.monthSep, l10n.monthOct, l10n.monthNov, l10n.monthDec,
+    ];
+    return l10n.lastSyncedOnDate(months[lastSynced.month - 1], lastSynced.day);
   }
 
   String _formatTime(DateTime dt) {
@@ -397,23 +403,25 @@ class _SettingsSheet extends ConsumerWidget {
   }
 
   Future<void> _showLanguagePicker(BuildContext context, AppSettings s, SettingsNotifier n) async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showAdaptiveOptionPicker<AppLanguage>(
       context,
-      title: 'Language',
+      title: l10n.languageLabel,
       current: s.language,
       options: [
-        for (final l in AppLanguage.values) (l, l.label),
+        for (final l in AppLanguage.values) (l, l.label(l10n)),
       ],
     );
     if (picked != null) n.setLanguage(picked);
   }
 
   Future<void> _showIntensityPicker(BuildContext context, AppSettings s, SettingsNotifier n) async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showAdaptiveOptionPicker<ReviewIntensity>(
       context,
-      title: 'Review intensity',
+      title: l10n.reviewIntensityLabel,
       current: s.reviewIntensity,
-      options: ReviewIntensity.values.map((v) => (v, intensityLabel(v))).toList(),
+      options: ReviewIntensity.values.map((v) => (v, intensityLabel(v, l10n))).toList(),
     );
     if (picked == null) return;
     try {
@@ -421,7 +429,7 @@ class _SettingsSheet extends ConsumerWidget {
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save review intensity. Please try again.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.couldNotSaveIntensity)),
       );
     }
   }
@@ -438,11 +446,12 @@ class _SettingsSheet extends ConsumerWidget {
   }
 
   Future<void> _confirmReset(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showAdaptiveConfirmDialog(
       context,
-      title: 'Reset all progress?',
-      message: 'This will delete all your learning history and word health data. This cannot be undone.',
-      destructiveLabel: 'Reset',
+      title: l10n.resetProgressTitle,
+      message: l10n.resetProgressMessage,
+      destructiveLabel: l10n.resetProgressConfirm,
     );
     if (confirmed) {
       // TODO: wipe word_progress table
@@ -478,12 +487,12 @@ class _SettingsNavBarDelegate extends SliverPersistentHeaderDelegate {
             fit: StackFit.expand,
             alignment: Alignment.center,
             children: [
-              const Center(
+              Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 80),
+                  padding: const EdgeInsets.symmetric(horizontal: 80),
                   child: Text(
-                    'Settings',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.ink),
+                    AppLocalizations.of(context)!.settingsSheetTitle,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.ink),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -494,10 +503,10 @@ class _SettingsNavBarDelegate extends SliverPersistentHeaderDelegate {
                 bottom: 0,
                 child: GestureDetector(
                   onTap: onDone,
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'Done',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.done,
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                         color: AppColors.tekhelet,

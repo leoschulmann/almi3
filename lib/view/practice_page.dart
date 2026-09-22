@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/view/widgets/answer_reaction.dart';
 import 'package:almi3/view/widgets/quiz_mc4_recognition.dart';
@@ -45,7 +46,7 @@ class _PracticePageState extends ConsumerState<PracticePage> {
       appBar: AppBar(
         backgroundColor: AppColors.pageBackground,
         elevation: 0,
-        title: const Text('Тренировка'),
+        title: Text(AppLocalizations.of(context)!.practiceTitle),
       ),
       body: SafeArea(
         child: Padding(
@@ -107,17 +108,18 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Пока нечего тренировать — начните учить слова в сессии',
+          Text(
+            l10n.emptyPracticePool,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: AppColors.inkSecondary),
+            style: const TextStyle(fontSize: 16, color: AppColors.inkSecondary),
           ),
           const SizedBox(height: 24),
-          TextButton(onPressed: onExit, child: const Text('Назад')),
+          TextButton(onPressed: onExit, child: Text(l10n.back)),
         ],
       ),
     );
@@ -130,17 +132,18 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Что-то пошло не так. Попробуйте ещё раз позже.',
+          Text(
+            l10n.genericErrorMessage,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
           ),
           const SizedBox(height: 24),
-          TextButton(onPressed: onExit, child: const Text('Назад')),
+          TextButton(onPressed: onExit, child: Text(l10n.back)),
         ],
       ),
     );

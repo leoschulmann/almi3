@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 enum GrammaticalPerson { none, first, second, third }
@@ -74,9 +75,12 @@ enum AppLanguage {
   const AppLanguage({required this.dbCode});
   final String dbCode;
 
-  String get label => switch (this) {
-        AppLanguage.en => 'English',
-        AppLanguage.ru => 'Russian',
+  /// Human-readable label, subject to the currently selected UI language --
+  /// callers must pass the [AppLocalizations] resolved from the live
+  /// `BuildContext`, never a cached/static instance.
+  String label(AppLocalizations l10n) => switch (this) {
+        AppLanguage.en => l10n.languageEnglish,
+        AppLanguage.ru => l10n.languageRussian,
       };
 
   Locale get locale => Locale(name);
@@ -89,14 +93,16 @@ enum ReviewIntensity { relaxed, normal, intense }
 /// Shared human-readable label for review intensity, used by both
 /// onboarding_page.dart and settings_page.dart -- one source, no second
 /// hardcoded copy. Never surfaces the underlying desired_retention number.
-String intensityLabel(ReviewIntensity v) {
+/// Subject to the currently selected UI language -- callers must pass the
+/// [AppLocalizations] resolved from the live `BuildContext`.
+String intensityLabel(ReviewIntensity v, AppLocalizations l10n) {
   switch (v) {
     case ReviewIntensity.relaxed:
-      return 'Relaxed';
+      return l10n.intensityRelaxed;
     case ReviewIntensity.normal:
-      return 'Normal';
+      return l10n.intensityNormal;
     case ReviewIntensity.intense:
-      return 'Intense';
+      return l10n.intensityIntense;
   }
 }
 

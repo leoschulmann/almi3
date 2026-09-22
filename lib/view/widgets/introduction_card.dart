@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,7 @@ class _IntroductionCardState extends State<IntroductionCard> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     final verb = widget.verb;
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -89,7 +91,7 @@ class _IntroductionCardState extends State<IntroductionCard> with SingleTickerPr
         const SizedBox(height: 24),
         Semantics(
           button: true,
-          label: 'Понятно',
+          label: l10n.gotIt,
           child: GestureDetector(
             onTap: () {
               HapticFeedback.mediumImpact();
@@ -102,10 +104,10 @@ class _IntroductionCardState extends State<IntroductionCard> with SingleTickerPr
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 decoration: BoxDecoration(color: AppColors.tekhelet, borderRadius: BorderRadius.circular(16)),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'Понятно',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                    l10n.gotIt,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                 ),
               ),
@@ -115,9 +117,9 @@ class _IntroductionCardState extends State<IntroductionCard> with SingleTickerPr
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _SecondaryAction(label: 'Я знаю', onTap: widget.onKnown)),
+            Expanded(child: _SecondaryAction(label: l10n.iKnowIt, onTap: widget.onKnown)),
             const SizedBox(width: 12),
-            Expanded(child: _SecondaryAction(label: 'Игнорировать', onTap: widget.onIgnore)),
+            Expanded(child: _SecondaryAction(label: l10n.ignoreAction, onTap: widget.onIgnore)),
           ],
         ),
       ],

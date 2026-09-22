@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/adjective_list_page.dart';
 import 'package:almi3/view/noun_list_page.dart';
 import 'package:almi3/view/verb_list_page.dart';
@@ -104,6 +105,7 @@ class _BrowseMenuOverlayState extends ConsumerState<_BrowseMenuOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final countsAsync = ref.watch(browseCountsProvider);
 
     // anchor center X — center of Browse tab
@@ -167,6 +169,7 @@ class _BrowseMenuOverlayState extends ConsumerState<_BrowseMenuOverlay>
                             : null,
                         currentMode: widget.currentMode,
                         onSelect: widget.onSelect,
+                        l10n: l10n,
                       ),
                       // caret pointing down to Browse tab
                       Padding(
@@ -195,11 +198,13 @@ class _PopupCard extends StatelessWidget {
   final BrowseMode currentMode;
   // page is null for "All roots" — caller should pop to first route
   final void Function(Widget? page, BrowseMode mode) onSelect;
+  final AppLocalizations l10n;
 
   const _PopupCard({
     required this.counts,
     required this.currentMode,
     required this.onSelect,
+    required this.l10n,
   });
 
   @override
@@ -221,7 +226,7 @@ class _PopupCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _PopupRow(
-                label: 'All roots',
+                label: l10n.allRootsLabel,
                 dot: AppColors.ink.withValues(alpha: 0.25),
                 count: counts?.roots,
                 isActive: currentMode == BrowseMode.allRoots,
@@ -229,21 +234,21 @@ class _PopupCard extends StatelessWidget {
                 onTap: () => onSelect(null, BrowseMode.allRoots),
               ),
               _PopupRow(
-                label: 'Verbs',
+                label: l10n.verbsTitle,
                 dot: AppColors.verbMain,
                 count: counts?.verbs,
                 isActive: currentMode == BrowseMode.verbs,
                 onTap: () => onSelect(const VerbListPage(), BrowseMode.verbs),
               ),
               _PopupRow(
-                label: 'Nouns',
+                label: l10n.nounsTitle,
                 dot: AppColors.nounMain,
                 count: counts?.nouns,
                 isActive: currentMode == BrowseMode.nouns,
                 onTap: () => onSelect(const NounListPage(), BrowseMode.nouns),
               ),
               _PopupRow(
-                label: 'Adjectives',
+                label: l10n.adjectivesTitle,
                 dot: AppColors.adjectiveMain,
                 count: counts?.adjs,
                 isActive: currentMode == BrowseMode.adjs,
