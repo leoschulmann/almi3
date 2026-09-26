@@ -117,7 +117,73 @@ void main() {
       );
 
       final actual = await service.cardRetrievability(row, now: now);
-      expect(actual, expected);
+      // Fractional-day calc vs the library's whole-day calc: exact match at an
+      // exact-day boundary, up to sub-second storage rounding (lastReview is
+      // persisted as unix seconds) and floating-point rounding-order noise.
+      expect(actual, closeTo(expected, 1e-6));
+    });
+
+    test('cardRetrievability decays within the first calendar day instead of plateauing at 100%', () async {
+      final lastReview = DateTime.now().toUtc();
+      await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 1, // low stability, as after an "Again" streak
+        difficulty: 8,
+        lastReview: lastReview.millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      final atReview = await service.cardRetrievability(row, now: lastReview);
+      final at12h = await service.cardRetrievability(row, now: lastReview.add(const Duration(hours: 12)));
+      final at23h = await service.cardRetrievability(row, now: lastReview.add(const Duration(hours: 23)));
+
+      // lastReview is persisted as unix seconds, so up to ~1s of sub-second
+      // precision is lost on round-trip — allow for that rounding here.
+      expect(atReview, closeTo(1.0, 1e-4));
+      // Pinned value (not just monotonicity), so a formula regression that
+      // stays monotonic (wrong exponent order, wrong day divisor, ...) still
+      // fails: (1 + factor*0.5/1)^decay with the default fsrs weights.
+      expect(at12h, closeTo(0.9421983079979164, 1e-4));
+      expect(at12h, lessThan(atReview));
+      expect(at23h, lessThan(at12h));
+    });
+
+    test('cardRetrievability clamps a future lastReview (clock skew) to elapsed=0, not negative', () async {
+      final now = DateTime.now().toUtc();
+      final lastReview = now.add(const Duration(hours: 2));
+      await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 5,
+        difficulty: 5,
+        lastReview: lastReview.millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      final r = await service.cardRetrievability(row, now: now);
+      expect(r, closeTo(1.0, 1e-4));
+    });
+
+    test('cardRetrievability stays a valid probability for a long-neglected low-stability card', () async {
+      final now = DateTime.now().toUtc();
+      final lastReview = now.subtract(const Duration(days: 400));
+      await _insertLexicalCard(
+        db,
+        direction: directionRecognition,
+        state: fsrs.State.review.value,
+        stability: 1,
+        difficulty: 8,
+        lastReview: lastReview.millisecondsSinceEpoch ~/ 1000,
+      );
+      final row = (await db.select(db.cardFsrsTable).get()).single;
+
+      final r = await service.cardRetrievability(row, now: now);
+      expect(r, greaterThanOrEqualTo(0));
+      expect(r, lessThan(1.0));
+      expect(r.isNaN, isFalse);
     });
 
     test('lexemeHealth returns the MIN retrievability across cards, not an average', () async {

@@ -4,7 +4,7 @@ import 'package:almi3/core/engine_config.dart';
 import 'package:almi3/core/logger.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/answer_log_codes.dart';
-import 'package:almi3/model/fsrs/card_mapper.dart';
+import 'package:almi3/model/fsrs/retrievability.dart';
 import 'package:almi3/model/fsrs/scheduler_provider.dart';
 import 'package:almi3/model/repository/user/answer_log_repository.dart';
 import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
@@ -38,12 +38,24 @@ class HealthService {
     required this.answerLogRepository,
   });
 
-  /// Retrievability of a single card (0..1). The library already returns 0
-  /// for a never-reviewed card (lastReview == null), which happens to match
-  /// a "New" card showing 0% health with no special-casing needed.
+  /// Retrievability of a single card (0..1), via [fractionalDayRetrievability]
+  /// (§8.1: decays continuously between reviews, not a whole-day plateau).
+  /// Returns 0 for a never-reviewed card (lastReview == null), matching a
+  /// "New" card showing 0% health with no special-casing needed.
   Future<double> cardRetrievability(CardFsrsTableData row, {DateTime? now}) async {
+    // Always resolve the scheduler first, even when about to return 0 below:
+    // this lazily inserts the default fsrs_params row on first use (see
+    // schedulerProvider), a side effect other services rely on having run.
     final scheduler = await ref.read(schedulerProvider.future);
-    return scheduler.getCardRetrievability(cardFsrsRowToLibraryCard(row), currentDateTime: now);
+    if (row.lastReview == null || row.stability == null) return 0;
+    final derived = deriveFsrsFactorAndDecay(scheduler.parameters);
+    return fractionalDayRetrievability(
+      stability: row.stability!,
+      lastReview: DateTime.fromMillisecondsSinceEpoch(row.lastReview! * 1000, isUtc: true),
+      currentDateTime: now ?? DateTime.now().toUtc(),
+      factor: derived.factor,
+      decay: derived.decay,
+    );
   }
 
   /// Base = min retrievability (0..1) over the lexeme's cards. Null if the
