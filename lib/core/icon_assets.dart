@@ -78,6 +78,24 @@ String binyanDisplayName(String binyanName) {
   }
 }
 
+/// Maps a HealthService health percent (0..100+, double; null = word not
+/// started or lexeme has no cards) to the 0..6 scale [heartIconAsset]
+/// expects: equal quintiles over 0-100 for 1(empty)..5(full), >100 -> 6
+/// (super/crown), null -> 0 (na). NaN (should never happen under
+/// HealthService's documented invariants -- retrievability and the
+/// practice bonus are both non-negative -- but not proven impossible) is
+/// treated as na rather than silently falling through to "empty", so a
+/// bad read surfaces as an anomaly instead of masquerading as low health.
+int heartHealthLevel(double? health) {
+  if (health == null || health.isNaN) return 0;
+  if (health > 100) return 6;
+  if (health >= 80) return 5;
+  if (health >= 60) return 4;
+  if (health >= 40) return 3;
+  if (health >= 20) return 2;
+  return 1;
+}
+
 // health: 0=na, 1=empty, 2=1q, 3=half, 4=3q, 5=full, 6=super
 String heartIconAsset(int health) {
   switch (health) {

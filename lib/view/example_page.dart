@@ -8,11 +8,10 @@ import 'package:almi3/view/widgets/tense_section_header.dart';
 import 'package:almi3/view/widgets/verb_tense_section.dart';
 import 'package:almi3/viewmodel/example_page_viewmodel.dart';
 import 'package:almi3/viewmodel/state/example_page_state.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-const _noExamplesMessage = 'No examples for this form yet';
 
 class ExamplePage extends ConsumerStatefulWidget {
   final int verbId;
@@ -47,7 +46,7 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
       if (!next.groups.any((g) => g.formId == fid)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          showAdaptiveToast(context, _noExamplesMessage);
+          showAdaptiveToast(context, AppLocalizations.of(context)!.noExamplesForFormYet);
         });
         return;
       }
@@ -65,7 +64,7 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         if (!state.groups.any((g) => g.formId == fid)) {
-          showAdaptiveToast(context, _noExamplesMessage);
+          showAdaptiveToast(context, AppLocalizations.of(context)!.noExamplesForFormYet);
         } else {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) _scrollToForm(fid);
@@ -78,7 +77,10 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
 
     return Scaffold(
       appBar: AlmiAppBar(
-        title: Text('examples for ($total) ${widget.verbValue}', style: const TextStyle(fontSize: 16)),
+        title: Text(
+          AppLocalizations.of(context)!.examplesForCount(total, widget.verbValue),
+          style: const TextStyle(fontSize: 16),
+        ),
       ),
       body: _buildBody(state),
     );
@@ -92,10 +94,15 @@ class _ExamplePageState extends ConsumerState<ExamplePage> {
 
   Widget _buildBody(ExamplePageState state) {
     if (state.isLoading) return const Center(child: CircularProgressIndicator());
-    if (state.errMsg != null) return Center(child: Text('Error: ${state.errMsg}'));
+    if (state.errMsg != null) {
+      return Center(child: Text(AppLocalizations.of(context)!.errorWithMessage(state.errMsg!)));
+    }
     if (state.groups.isEmpty) {
       return Center(
-        child: Text('No examples found', style: GoogleFonts.rubik(fontSize: 16, color: AppColors.textSecondary)),
+        child: Text(
+          AppLocalizations.of(context)!.noExamplesFound,
+          style: GoogleFonts.rubik(fontSize: 16, color: AppColors.textSecondary),
+        ),
       );
     }
 

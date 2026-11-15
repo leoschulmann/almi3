@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/widgets/answer_reaction.dart';
@@ -70,8 +71,9 @@ class _SessionPageState extends ConsumerState<SessionPage> {
       // here for clarity/intent (this IS the "did the slot's occupant
       // change" check), not to work around a false-equality bug.
       if (next.pendingUndo != null && !identical(next.pendingUndo, previous?.pendingUndo)) {
+        final l10n = AppLocalizations.of(context)!;
         final pendingUndo = next.pendingUndo!;
-        final message = pendingUndo is PendingKnownUndo ? 'Отмечено как известное' : 'Убрано из изучения';
+        final message = pendingUndo is PendingKnownUndo ? l10n.markedAsKnown : l10n.removedFromLearning;
         showUndoSnackbar(
           context,
           message,
@@ -89,7 +91,7 @@ class _SessionPageState extends ConsumerState<SessionPage> {
       appBar: AppBar(
         backgroundColor: AppColors.pageBackground,
         elevation: 0,
-        title: const Text('Сессия'),
+        title: Text(AppLocalizations.of(context)!.sessionTitle),
       ),
       body: SafeArea(
         child: Padding(
@@ -176,17 +178,18 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Нечего повторять — всё выучено на сегодня',
+          Text(
+            l10n.nothingToReviewToday,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: AppColors.inkSecondary),
+            style: const TextStyle(fontSize: 16, color: AppColors.inkSecondary),
           ),
           const SizedBox(height: 24),
-          TextButton(onPressed: onExit, child: const Text('Назад')),
+          TextButton(onPressed: onExit, child: Text(l10n.back)),
         ],
       ),
     );
@@ -204,19 +207,20 @@ class _NewLimitForkState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            newLimitForkCopy,
+          Text(
+            newLimitForkCopy(l10n),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(onPressed: onContinueWithNew, child: const Text('Продолжить с новыми')),
+          ElevatedButton(onPressed: onContinueWithNew, child: Text(l10n.continueWithNew)),
           const SizedBox(height: 12),
-          TextButton(onPressed: onPractice, child: const Text('Потренировать')),
+          TextButton(onPressed: onPractice, child: Text(l10n.practiceVerbAction)),
         ],
       ),
     );
@@ -232,17 +236,18 @@ class _BacklogWelcomeState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            backlogWelcomeCopy,
+          Text(
+            backlogWelcomeCopy(l10n),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(onPressed: onStart, child: const Text('Начать')),
+          ElevatedButton(onPressed: onStart, child: Text(l10n.start)),
         ],
       ),
     );
@@ -255,17 +260,18 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Что-то пошло не так. Попробуйте ещё раз позже.',
+          Text(
+            l10n.genericErrorMessage,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
           ),
           const SizedBox(height: 24),
-          TextButton(onPressed: onExit, child: const Text('Назад')),
+          TextButton(onPressed: onExit, child: Text(l10n.back)),
         ],
       ),
     );

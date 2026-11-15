@@ -62,4 +62,40 @@ class LexicalCardRepository {
     final rows = await query.get();
     return rows.map((r) => r.readTable(database.lexemeProgressTable).entityId).toSet();
   }
+
+  // SELECT lp.entity_id FROM lexeme_progress lp
+  // JOIN lexical_card lc ON lc.lexeme_progress_id = lp.id
+  // JOIN card_fsrs cf ON cf.id = lc.card_id
+  // WHERE lp.entity_type = ? AND lp.status IN (?) AND cf.due <= ?
+  //
+  // Lightweight "has a due card" check for list-screen status indicators
+  // (e.g. Roots' "to review" filter) -- NOT the §6.3 practice/session gate,
+  // which lives in ScheduledReviewService and must not be duplicated here.
+  // `statuses` is caller-supplied (not hardcoded here) to keep this
+  // repository free of fsrs-layer status constants -- pass e.g.
+  // [lexemeStatusActive] to exclude ignored lexemes from "to review".
+  Future<Set<int>> getDueEntityIds({
+    required int entityType,
+    required List<int> statuses,
+    required int nowUnixSec,
+  }) async {
+    final query = database.select(database.lexemeProgressTable).join([
+      innerJoin(
+        database.lexicalCardTable,
+        database.lexicalCardTable.lexemeProgressId.equalsExp(database.lexemeProgressTable.id),
+      ),
+      innerJoin(
+        database.cardFsrsTable,
+        database.cardFsrsTable.id.equalsExp(database.lexicalCardTable.cardId) &
+            database.cardFsrsTable.due.isSmallerOrEqualValue(nowUnixSec),
+      ),
+    ])
+      ..where(
+        database.lexemeProgressTable.entityType.equals(entityType) &
+            database.lexemeProgressTable.status.isIn(statuses),
+      );
+
+    final rows = await query.get();
+    return rows.map((r) => r.readTable(database.lexemeProgressTable).entityId).toSet();
+  }
 }

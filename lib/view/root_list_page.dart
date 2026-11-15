@@ -2,27 +2,17 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/view/settings_page.dart';
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/dto/root_card_stats.dart';
 import 'package:almi3/view/widgets/root_card.dart';
 import 'package:almi3/view/widgets/root_filter_bar.dart';
 import 'package:almi3/view/widgets/root_search_field.dart';
 import 'package:almi3/view/word_page.dart';
 import 'package:almi3/viewmodel/root_list_viewmodel.dart';
 import 'package:almi3/viewmodel/state/root_list_page_state.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// TODO: remove when word_progress table is wired
-const _mockStats = [
-  null,
-  RootCardStats(verbs: WordTypeStats(total: 12, learned: 4, due: 0)),
-  RootCardStats(verbs: WordTypeStats(total: 8, learned: 8, due: 0), nouns: WordTypeStats(total: 3, learned: 3, due: 0)),
-  RootCardStats(verbs: WordTypeStats(total: 10, learned: 3, due: 2), nouns: WordTypeStats(total: 4, learned: 1, due: 1)),
-  RootCardStats(verbs: WordTypeStats(total: 6, learned: 6, due: 0), nouns: WordTypeStats(total: 2, learned: 2, due: 0), adjs: WordTypeStats(total: 3, learned: 3, due: 0)),
-  RootCardStats(verbs: WordTypeStats(total: 9, learned: 0, due: 0)),
-];
 
 class RootListPage extends ConsumerStatefulWidget {
   const RootListPage({super.key});
@@ -83,7 +73,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
     }
 
     if (state.errMsg != null) {
-      return Center(child: Text('Error: ${state.errMsg}'));
+      return Center(child: Text(AppLocalizations.of(context)!.errorWithMessage(state.errMsg!)));
     }
 
     return RefreshIndicator(
@@ -98,15 +88,16 @@ class _RootListPageState extends ConsumerState<RootListPage> {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            _buildTitleAndSearchSliver(),
-            _buildRootCardListSliver(state),
+            _buildTitleAndSearchSliver(context),
+            _buildRootCardListSliver(context, state),
           ],
         ),
       ),
     );
   }
 
-  SliverAppBar _buildTitleAndSearchSliver() {
+  SliverAppBar _buildTitleAndSearchSliver(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SliverAppBar(
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -121,14 +112,14 @@ class _RootListPageState extends ConsumerState<RootListPage> {
       title: AnimatedOpacity(
         opacity: _titleVisible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 150),
-        child: const Text(
-          'Roots',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+        child: Text(
+          l10n.rootsTitle,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
         ),
       ),
       actions: [
         AdaptiveIconButton(
-          tooltip: 'Toggle niqqud',
+          tooltip: l10n.toggleNiqqudTooltip,
           onPressed: () {/* TODO: toggle niqqud */},
           icon: const Text(
             'אָ',
@@ -136,7 +127,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
           ),
         ),
         AdaptiveIconButton(
-          tooltip: 'Settings',
+          tooltip: l10n.settingsTooltip,
           onPressed: () => showSettingsSheet(context),
           icon: const Icon(Icons.settings_outlined, size: 23, color: AppColors.tekhelet),
         ),
@@ -158,9 +149,9 @@ class _RootListPageState extends ConsumerState<RootListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: _toolbarPlaceholderHeight),
-                const Text(
-                  'Roots',
-                  style: TextStyle(
+                Text(
+                  l10n.rootsTitle,
+                  style: const TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.6,
@@ -189,16 +180,16 @@ class _RootListPageState extends ConsumerState<RootListPage> {
   }
 
 
-  Widget _buildRootCardListSliver(RootListPageState state) {
+  Widget _buildRootCardListSliver(BuildContext context, RootListPageState state) {
     if (state.roots.isEmpty) {
-      return const SliverFillRemaining(
-          child: Center(child: Text('No roots — try syncing first.'))
+      return SliverFillRemaining(
+          child: Center(child: Text(AppLocalizations.of(context)!.noRootsTrySyncing))
       );
     }
     else {
       final roots = state.roots.where((r) {
         if (_filter == RootFilter.saved) return state.isBookmarked(r.id);
-        // TODO: toReview filter needs due count from word_progress
+        if (_filter == RootFilter.toReview) return state.isToReview(r.id);
         return true;
       }).toList();
       return SliverPadding(
@@ -216,7 +207,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
               return RootCard(
                 hebrewText: root.value,
                 isBookmarked: state.isBookmarked(root.id),
-                stats: _mockStats[index % _mockStats.length],
+                stats: state.rootStats[root.id],
                 onTap: () => Navigator.of(context).push(
                   adaptivePageRoute(builder: (_) => WordPage(root: root)),
                 ),

@@ -19,6 +19,7 @@ import 'package:almi3/view/session_page.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -119,7 +120,12 @@ void main() {
             appDatabaseProvider.overrideWithValue(contentDb),
             settingsProvider.overrideWith(() => _SettingsNotifier()),
           ],
-          child: const MaterialApp(home: HomePage()),
+          child: MaterialApp(
+            home: const HomePage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         );
 
     testWidgets('renders zero-state status text sourced from the engine', (tester) async {
@@ -183,7 +189,11 @@ void main() {
       final now = nowUtcSeconds();
       await _insertLexemeWithCard(userDb, due: now + 100000, lastReview: now - 100);
 
-      await tester.pageBack();
+      // tester.pageBack() looks up the back button by its English tooltip
+      // ('Back') via MaterialLocalizations -- this harness pins locale: ru,
+      // so the tooltip is localized to 'Назад' and the generic helper can't
+      // find it. Look it up by the ru tooltip directly instead.
+      await tester.tap(find.byTooltip('Назад'));
       await tester.pumpAndSettle();
 
       expect(find.text('1 крепкое · 0 слабых'), findsOneWidget);
@@ -200,7 +210,12 @@ void main() {
               throw StateError('simulated progress failure');
             }),
           ],
-          child: const MaterialApp(home: HomePage()),
+          child: MaterialApp(
+            home: const HomePage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -298,7 +313,12 @@ void main() {
               ),
             ),
           ],
-          child: const MaterialApp(home: HomePage()),
+          child: MaterialApp(
+            home: const HomePage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         ),
       );
       await tester.pumpAndSettle();

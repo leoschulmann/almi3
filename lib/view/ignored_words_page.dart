@@ -1,9 +1,10 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/db/user_db.dart';
 import 'package:almi3/model/fsrs/lexeme_selection.dart' show entityTypeVerb;
 import 'package:almi3/model/fsrs/lexeme_status_actions.dart';
 import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
-import 'package:almi3/viewmodel/session_notifier.dart' show sessionContentLang;
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,10 +42,11 @@ class _IgnoredWordsPageState extends ConsumerState<IgnoredWordsPage> {
     final verbRepo = ref.read(verbRepositoryProvider);
     final rows = await lexemeProgressRepository.getByStatus(lexemeStatusIgnored);
 
+    final lang = ref.read(contentLangProvider);
     final result = <_WordRow>[];
     for (final row in rows) {
       if (row.entityType != entityTypeVerb) continue; // only verbs exist so far
-      final detail = await verbRepo.getVerbDetail(row.entityId, sessionContentLang);
+      final detail = await verbRepo.getVerbDetail(row.entityId, lang);
       if (detail == null) continue;
       final translation = detail.translations.isNotEmpty ? detail.translations.first : '';
       final label = translation.isEmpty ? detail.value : '${detail.value} — $translation';
@@ -64,12 +66,13 @@ class _IgnoredWordsPageState extends ConsumerState<IgnoredWordsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         backgroundColor: AppColors.pageBackground,
         elevation: 0,
-        title: const Text('Убранные слова'),
+        title: Text(l10n.ignoredWordsTitle),
       ),
       body: SafeArea(
         child: FutureBuilder<List<_WordRow>>(
@@ -83,10 +86,10 @@ class _IgnoredWordsPageState extends ConsumerState<IgnoredWordsPage> {
             }
             final rows = snapshot.data!;
             if (rows.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'Нет убранных слов',
-                  style: TextStyle(fontSize: 16, color: AppColors.inkSecondary),
+                  l10n.noIgnoredWords,
+                  style: const TextStyle(fontSize: 16, color: AppColors.inkSecondary),
                 ),
               );
             }
@@ -116,11 +119,11 @@ class _WordsErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Text(
-        'Что-то пошло не так. Попробуйте ещё раз позже.',
+        AppLocalizations.of(context)!.genericErrorMessage,
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
       ),
     );
   }
@@ -151,7 +154,7 @@ class _WordListTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          TextButton(onPressed: onReturn, child: const Text('Вернуть в изучение')),
+          TextButton(onPressed: onReturn, child: Text(AppLocalizations.of(context)!.returnToLearning)),
         ],
       ),
     );

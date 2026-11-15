@@ -1,9 +1,9 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
-import 'package:almi3/view/ignored_words_page.dart';
-import 'package:almi3/view/known_words_page.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/view/session_page.dart';
+import 'package:almi3/view/settings_page.dart';
 import 'package:almi3/viewmodel/home_notifier.dart';
 import 'package:almi3/viewmodel/progress_notifier.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +20,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(homeStatusProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
@@ -30,17 +31,27 @@ class HomePage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              const Text(
-                'ALMI',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.appName,
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined, color: AppColors.inkSecondary),
+                    tooltip: l10n.settingsTooltip,
+                    onPressed: () => showSettingsSheet(context),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
 
               _StudyButton(
                 statusText: statusAsync.when(
-                  data: (status) => '${status.dueCount} к повторению · ${status.newCount} новых',
-                  loading: () => '...',
-                  error: (_, _) => '— к повторению · — новых',
+                  data: (status) => l10n.studyStatusCounts(status.dueCount, status.newCount),
+                  loading: () => l10n.loadingEllipsis,
+                  error: (_, _) => l10n.studyStatusError,
                 ),
                 onTap: () {
                   Navigator.of(context)
@@ -72,9 +83,6 @@ class HomePage extends ConsumerWidget {
 
               const SizedBox(height: 24),
               const _ProgressShowcase(),
-
-              const SizedBox(height: 16),
-              const _StatusLinksSection(),
 
               const SizedBox(height: 24),
             ],
@@ -123,9 +131,10 @@ class _StudyButtonState extends State<_StudyButton> with SingleTickerProviderSta
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Semantics(
       button: true,
-      label: 'Учиться',
+      label: l10n.studyAction,
       child: GestureDetector(
         onTap: () {
           HapticFeedback.mediumImpact();
@@ -144,9 +153,9 @@ class _StudyButtonState extends State<_StudyButton> with SingleTickerProviderSta
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Учиться',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+                Text(
+                  l10n.studyAction,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -171,9 +180,10 @@ class _PracticeDoor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Semantics(
       button: true,
-      label: 'Тренировка',
+      label: l10n.practiceTitle,
       child: GestureDetector(
       onTap: onTap,
       child: Container(
@@ -184,94 +194,18 @@ class _PracticeDoor extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.hairline),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Expanded(
               child: Text(
-                'Тренировка',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+                l10n.practiceTitle,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.inkSecondary),
+            const Icon(Icons.chevron_right, color: AppColors.inkSecondary),
           ],
         ),
       ),
-      ),
-    );
-  }
-}
-
-/// §10 entry point: a compact "Убрано: N" counter (the single counter
-/// CAP-8 requires literally) leading to "Убранные слова", plus a plain
-/// link (no counter, §"Decided") to "Известные слова".
-class _StatusLinksSection extends ConsumerWidget {
-  const _StatusLinksSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ignoredCountAsync = ref.watch(ignoredWordsCountProvider);
-    final ignoredLabel = ignoredCountAsync.when(
-      data: (count) => 'Убрано: $count',
-      loading: () => 'Убрано: …',
-      error: (_, _) => 'Убрано: —',
-    );
-
-    return Row(
-      children: [
-        Expanded(
-          child: _StatusLinkTile(
-            label: ignoredLabel,
-            onTap: () {
-              Navigator.of(context)
-                  .push(adaptivePageRoute(builder: (_) => const IgnoredWordsPage()))
-                  .then((_) {
-                if (context.mounted) ref.invalidate(ignoredWordsCountProvider);
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatusLinkTile(
-            label: 'Известные слова',
-            onTap: () {
-              Navigator.of(context).push(adaptivePageRoute(builder: (_) => const KnownWordsPage()));
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatusLinkTile extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _StatusLinkTile({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          onTap();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.hairline),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.inkSecondary),
-          ),
-        ),
       ),
     );
   }
@@ -298,12 +232,16 @@ class _ProgressShowcase extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(progressStatusProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     final text = progressAsync.when(
       data: (status) {
         if (status.strongCount == 0 && status.weakCount == 0) {
-          return 'Начните заниматься, чтобы увидеть прогресс';
+          return l10n.noProgressYet;
         }
+        // _pluralizeRu itself stays untouched (frozen scope decision, story
+        // 4) -- its RU word forms are only meaningful in the ru locale; the
+        // surrounding template is ARB-ized with {count} placeholders.
         final strongWord = _pluralizeRu(
           status.strongCount,
           one: 'крепкое',
@@ -316,10 +254,10 @@ class _ProgressShowcase extends ConsumerWidget {
           few: 'слабых',
           many: 'слабых',
         );
-        return '${status.strongCount} $strongWord · ${status.weakCount} $weakWord';
+        return l10n.healthBucketSummary(status.strongCount, strongWord, status.weakCount, weakWord);
       },
-      loading: () => '...',
-      error: (_, _) => '—',
+      loading: () => l10n.loadingEllipsis,
+      error: (_, _) => l10n.dataUnavailable,
     );
 
     return Container(

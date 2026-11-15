@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:almi3/core/app_colors.dart';
 
 import 'package:almi3/core/app_settings.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -234,10 +235,10 @@ class _FontNavBarDelegate extends SliverPersistentHeaderDelegate {
                 bottom: 0,
                 child: GestureDetector(
                   onTap: onDone,
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'Done',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.tekhelet),
+                      AppLocalizations.of(context)!.done,
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.tekhelet),
                     ),
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/viewmodel/session_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ class AnswerReaction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final before = reaction.healthBefore;
     final after = reaction.healthAfter;
     // Unknown (null) health is a distinct state from "0%" or "unchanged" --
@@ -36,7 +38,7 @@ class AnswerReaction extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                reaction.wasCorrect ? 'Верно' : 'Неверно',
+                reaction.wasCorrect ? l10n.correctAnswer : l10n.incorrectAnswer,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -56,8 +58,8 @@ class AnswerReaction extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 healthUnknown
-                    ? 'Здоровье слова: —'
-                    : (grew ? 'Здоровье слова подросло' : 'Здоровье слова: ${after.round()}%'),
+                    ? l10n.wordHealthUnknown
+                    : (grew ? l10n.wordHealthGrew : l10n.wordHealthPercent(after.round())),
                 style: const TextStyle(fontSize: 13, color: AppColors.inkSecondary),
               ),
             ],
@@ -66,7 +68,7 @@ class AnswerReaction extends StatelessWidget {
         const SizedBox(height: 24),
         Semantics(
           button: true,
-          label: 'Далее',
+          label: l10n.next,
           child: GestureDetector(
             onTap: () {
               HapticFeedback.mediumImpact();
@@ -76,10 +78,10 @@ class AnswerReaction extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(color: AppColors.tekhelet, borderRadius: BorderRadius.circular(14)),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'Далее',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                  l10n.next,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
               ),
             ),

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:almi3/core/engine_config.dart';
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/health.dart';
 import 'package:almi3/model/fsrs/lexeme_introduction.dart';
@@ -16,10 +17,13 @@ import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Language used to render verb content in the session -- matches
-/// verb_page_viewmodel.dart's hardcoded choice (no i18n selection wired
-/// into content yet).
-const String sessionContentLang = 'EN';
+/// Live content language, sourced from [settingsProvider] -- the single
+/// point every content-lang consumer (session/practice/home/known-ignored
+/// words) reads from, so changing Settings updates content without a
+/// restart.
+final contentLangProvider = Provider<String>(
+  (ref) => ref.watch(settingsProvider.select((s) => s.language.dbCode)),
+);
 
 /// Narrowing rule (spec §"Decided (MVP format scope)"): the UI ships
 /// exactly two quiz widgets this story (mc4Recognition, typedProduction).
@@ -84,13 +88,17 @@ List<SessionItem> interleaveSessionQueue(List<SessionItem> due, List<SessionItem
 enum SessionPhase { loading, empty, ready, reacting, newLimitFork, backlogWelcome, complete, error }
 
 /// §9.3's exact copy for the new-limit fork -- shared by the widget and its
-/// tests so the literal is never duplicated across files.
-const String newLimitForkCopy = 'Цель выполнена 🎉 — Продолжить с новыми или потренировать начатые?';
+/// tests so the literal is never duplicated across files. Subject to the
+/// currently selected UI language -- callers must pass the
+/// [AppLocalizations] resolved from the live `BuildContext`.
+String newLimitForkCopy(AppLocalizations l10n) => l10n.newLimitForkCopy;
 
 /// Debt-backlog welcome copy (story 7): shown once before the first card
 /// when the due queue is a "naves" (> [backlogThreshold]). Deliberately
 /// contains no raw numbers (due-count, backlog size, batch index) -- §"Always".
-const String backlogWelcomeCopy = 'Давно не заходили — начнём с небольшой порции, без спешки.';
+/// Subject to the currently selected UI language -- callers must pass the
+/// [AppLocalizations] resolved from the live `BuildContext`.
+String backlogWelcomeCopy(AppLocalizations l10n) => l10n.backlogWelcomeCopy;
 
 /// Health read once before and once after a due-card answer (§11, boundaries)
 /// -- the diff drives the visible reaction. Never a UI-side recompute.
@@ -323,7 +331,8 @@ class SessionNotifier extends Notifier<SessionState> {
         SessionNewItem(:final entityId) => entityId,
         SessionDueItem(:final entityId) => entityId,
       };
-      final detail = await verbRepo.getVerbDetail(entityId, sessionContentLang);
+      final lang = ref.read(contentLangProvider);
+      final detail = await verbRepo.getVerbDetail(entityId, lang);
 
       var options = const <String>[];
       QuizType? overrideQuizType;
@@ -361,10 +370,11 @@ class SessionNotifier extends Notifier<SessionState> {
     final candidates = await verbRepo.getNewCandidatesOrderedByFrequency([excludeId], 12);
     candidates.shuffle(Random());
 
+    final lang = ref.read(contentLangProvider);
     final distractors = <String>[];
     for (final candidate in candidates) {
       if (distractors.length >= 3) break;
-      final detail = await verbRepo.getVerbDetail(candidate.id, sessionContentLang);
+      final detail = await verbRepo.getVerbDetail(candidate.id, lang);
       final translation = detail != null && detail.translations.isNotEmpty ? detail.translations.first : null;
       if (translation != null &&
           !correctTranslations.contains(translation) &&

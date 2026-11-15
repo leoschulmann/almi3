@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ Future<TimeOfDay?> showAdaptiveTimePicker(
   TimeOfDay initial,
 ) async {
   if (isIOS) {
+    final l10n = AppLocalizations.of(context)!;
     var picked = initial;
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
@@ -25,11 +27,11 @@ Future<TimeOfDay?> showAdaptiveTimePicker(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CupertinoButton(
-                  child: const Text('Cancel'),
+                  child: Text(l10n.cancel),
                   onPressed: () => Navigator.pop(ctx, false),
                 ),
                 CupertinoButton(
-                  child: const Text('Done'),
+                  child: Text(l10n.done),
                   onPressed: () => Navigator.pop(ctx, true),
                 ),
               ],
@@ -60,6 +62,7 @@ Future<bool> showAdaptiveConfirmDialog(
   required String message,
   required String destructiveLabel,
 }) async {
+  final l10n = AppLocalizations.of(context)!;
   final result = await showAdaptiveDialog<bool>(
     context: context,
     builder: (ctx) => isIOS
@@ -69,7 +72,7 @@ Future<bool> showAdaptiveConfirmDialog(
             actions: [
               CupertinoDialogAction(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               CupertinoDialogAction(
                 isDestructiveAction: true,
@@ -84,7 +87,7 @@ Future<bool> showAdaptiveConfirmDialog(
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
@@ -211,6 +214,7 @@ Future<T?> showAdaptiveOptionPicker<T>(
   T? current,
 }) async {
   if (isIOS) {
+    final l10n = AppLocalizations.of(context)!;
     return showCupertinoModalPopup<T>(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
@@ -222,7 +226,7 @@ Future<T?> showAdaptiveOptionPicker<T>(
         )).toList(),
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
       ),
     );
@@ -275,12 +279,13 @@ void showAdaptiveToast(BuildContext context, String message) {
 // an undo affordance.
 
 void showUndoSnackbar(BuildContext context, String message, VoidCallback onUndo) {
+  final l10n = AppLocalizations.of(context)!;
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
-        action: SnackBarAction(label: 'Отменить', onPressed: onUndo),
+        action: SnackBarAction(label: l10n.undo, onPressed: onUndo),
         duration: const Duration(seconds: 4),
       ),
     );

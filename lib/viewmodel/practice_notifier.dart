@@ -12,7 +12,7 @@ import 'package:almi3/model/repository/user/card_fsrs_repository.dart';
 import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
 import 'package:almi3/model/repository/user/lexical_card_repository.dart';
 import 'package:almi3/model/repository/vocab/verb_repository.dart';
-import 'package:almi3/viewmodel/session_notifier.dart' show AnswerReactionData, sessionContentLang, narrowQuizType;
+import 'package:almi3/viewmodel/session_notifier.dart' show AnswerReactionData, contentLangProvider, narrowQuizType;
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show verbRepositoryProvider;
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -212,7 +212,8 @@ class PracticeNotifier extends Notifier<PracticeState> {
   ) async {
     try {
       final verbRepo = ref.read(verbRepositoryProvider);
-      final detail = await verbRepo.getVerbDetail(item.entityId, sessionContentLang);
+      final lang = ref.read(contentLangProvider);
+      final detail = await verbRepo.getVerbDetail(item.entityId, lang);
 
       var options = const <String>[];
       QuizType? overrideQuizType;
@@ -242,10 +243,11 @@ class PracticeNotifier extends Notifier<PracticeState> {
     final candidates = await verbRepo.getNewCandidatesOrderedByFrequency([excludeId], 12);
     candidates.shuffle(Random());
 
+    final lang = ref.read(contentLangProvider);
     final distractors = <String>[];
     for (final candidate in candidates) {
       if (distractors.length >= 3) break;
-      final detail = await verbRepo.getVerbDetail(candidate.id, sessionContentLang);
+      final detail = await verbRepo.getVerbDetail(candidate.id, lang);
       final translation = detail != null && detail.translations.isNotEmpty ? detail.translations.first : null;
       if (translation != null &&
           !correctTranslations.contains(translation) &&

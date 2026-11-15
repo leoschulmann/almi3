@@ -7,6 +7,7 @@ import 'package:almi3/model/fsrs/quiz_type.dart';
 import 'package:almi3/view/practice_page.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart' show appDatabaseProvider;
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +106,12 @@ void main() {
             appDatabaseProvider.overrideWithValue(contentDb),
             settingsProvider.overrideWith(() => _SettingsNotifier(settings ?? AppSettings.defaultSettings())),
           ],
-          child: const MaterialApp(home: PracticePage()),
+          child: MaterialApp(
+            home: const PracticePage(),
+            locale: const Locale('ru'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         );
 
     testWidgets('no started words -> empty state, no quiz', (tester) async {
