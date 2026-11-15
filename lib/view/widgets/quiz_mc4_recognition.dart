@@ -1,4 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/hebrew_sentence_util.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
 import 'package:almi3/model/fsrs/quiz_type.dart';
@@ -44,9 +47,11 @@ class _QuizMc4RecognitionState extends State<QuizMc4Recognition> {
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
           child: Center(
-            child: Text(
-              widget.verb.value,
-              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.ink),
+            child: Consumer(
+              builder: (context, ref, _) => Text(
+                hebrewText(widget.verb.value, widget.verb.valueKtivMale, ref.watch(showNiqqudProvider)),
+                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.ink),
+              ),
             ),
           ),
         ),

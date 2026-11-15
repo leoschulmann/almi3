@@ -16,6 +16,7 @@ class VerbFormExampleRepository
     id: Value(dto.id),
     verbFormId: Value(dto.verbFormId),
     value: Value(dto.value),
+    valueKtivMale: Value(dto.valueKtivMale),
     file: Value(dto.file),
     version: Value(dto.version),
   );

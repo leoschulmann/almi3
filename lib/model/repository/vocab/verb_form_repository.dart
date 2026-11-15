@@ -15,6 +15,7 @@ class VerbFormRepository extends GenericRepository<VerbFormSimpleDto, VerbFormTa
         id: Value(dto.id),
         verbId: Value(dto.verbId),
         value: Value(dto.value),
+        valueKtivMale: Value(dto.valueKtivMale),
         version: Value(dto.version),
         tense: Value(dto.tense),
         person: Value(dto.person),

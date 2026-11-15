@@ -3,6 +3,7 @@ import 'package:almi3/core/enums.dart';
 class VerbDetailDto {
   final int id;
   final String value;
+  final String? valueKtivMale;
   final String binyan;
   final String root;
   final List<String> gizrahs;
@@ -17,6 +18,7 @@ class VerbDetailDto {
   const VerbDetailDto({
     required this.id,
     required this.value,
+    this.valueKtivMale,
     required this.binyan,
     required this.root,
     required this.gizrahs,
@@ -30,6 +32,7 @@ class VerbDetailDto {
 class VerbFormDisplayDto {
   final int id;
   final String value;
+  final String? valueKtivMale;
   final String translit;
   // True when [translit] was resolved on a fallback language rather than
   // the one requested.
@@ -42,6 +45,7 @@ class VerbFormDisplayDto {
   const VerbFormDisplayDto({
     required this.id,
     required this.value,
+    this.valueKtivMale,
     required this.translit,
     this.translitIsFallback = false,
     required this.tense,

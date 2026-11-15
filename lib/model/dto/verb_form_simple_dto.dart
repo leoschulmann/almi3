@@ -14,6 +14,9 @@ class VerbFormSimpleDto {
   @JsonKey(name: 'v')
   final String value;
 
+  @JsonKey(name: 'km')
+  final String? valueKtivMale;
+
   @JsonKey(name: 'ver')
   final int version;
 
@@ -36,6 +39,7 @@ class VerbFormSimpleDto {
     required this.id,
     required this.verbId,
     required this.value,
+    this.valueKtivMale,
     required this.version,
     required this.tense,
     required this.person,

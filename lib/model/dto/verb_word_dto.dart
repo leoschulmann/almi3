@@ -1,6 +1,7 @@
 class VerbWordDto {
   final int id;
   final String value;
+  final String? valueKtivMale;
   final String translation;
   // True when [translation] was resolved on a fallback language rather than
   // the one requested.
@@ -9,6 +10,7 @@ class VerbWordDto {
   const VerbWordDto({
     required this.id,
     required this.value,
+    this.valueKtivMale,
     required this.translation,
     this.isFallback = false,
   });

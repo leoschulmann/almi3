@@ -19,6 +19,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     return VerbTableCompanion(
       id: Value(dto.id),
       value: Value(dto.value),
+      valueKtivMale: Value(dto.valueKtivMale),
       version: Value(dto.version),
       rootId: Value(dto.rootId),
       binyanId: Value(dto.binyanId),
@@ -209,6 +210,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
     return VerbDetailDto(
       id: verb.id,
       value: verb.value,
+      valueKtivMale: verb.valueKtivMale,
       binyan: binyan.value,
       root: root.value,
       gizrahs: gizrahRows.map((r) => r.readTable(database.gizrahTable).value).toList(),
@@ -220,6 +222,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
         return VerbFormDisplayDto(
           id: f.id,
           value: f.value,
+          valueKtivMale: f.valueKtivMale,
           translit: translit?.$1 ?? '',
           translitIsFallback: translit?.$2 ?? false,
           tense: Tense.values[f.tense],
@@ -259,6 +262,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
       grouped.putIfAbsent(ex.verbFormId, () => []).add(ExampleDisplayDto(
         exampleId: ex.id,
         sentence: ex.value,
+        sentenceKtivMale: ex.valueKtivMale,
         translation: translation?.$1 ?? '',
         isFallback: translation?.$2 ?? false,
       ));
@@ -270,6 +274,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
         VerbFormExampleGroupDto(
           formId: f.id,
           formValue: f.value,
+          formValueKtivMale: f.valueKtivMale,
           tense: Tense.values[f.tense],
           person: GrammaticalPerson.values[f.person],
           plurality: Plurality.values[f.plurality],
@@ -366,7 +371,7 @@ class VerbRepository extends GenericRepository<VerbSyncDto, VerbTableData, VerbT
       final isFallback = entry?.$2 ?? false;
       final first = t.isEmpty ? '' : t[0];
       final label = t.length <= 1 ? first : '$first⁺${_superscript(t.length - 1)}';
-      return VerbWordDto(id: verb.id, value: verb.value, translation: label, isFallback: isFallback);
+      return VerbWordDto(id: verb.id, value: verb.value, valueKtivMale: verb.valueKtivMale, translation: label, isFallback: isFallback);
     }).toList();
   }
 }

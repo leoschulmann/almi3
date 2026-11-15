@@ -11,6 +11,9 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('SharedPreferences not injected'),
 );
 
+/// Whether Hebrew is shown with niqqud (false = ktiv male, no vowel marks).
+final showNiqqudProvider = Provider<bool>((ref) => ref.watch(settingsProvider.select((s) => s.showNiqqud)));
+
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(
   SettingsNotifier.new,
 );
@@ -21,6 +24,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kAppFont = 'settings.appFont';
   static const _kQuizFonts = 'settings.quizFonts';
   static const _kShowTranslit = 'settings.showTransliteration';
+  static const _kShowNiqqud = 'settings.showNiqqud';
   static const _kDisableParallax = 'settings.disableRootParallax';
   static const _kReviewIntensity = 'settings.reviewIntensity';
   static const _kDayBoundaryHour = 'settings.dayBoundaryHour';
@@ -67,6 +71,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       appFont: prefs.getString(_kAppFont) ?? defaults.appFont,
       quizFonts: quizFonts.isEmpty ? defaults.quizFonts : quizFonts,
       showTransliteration: prefs.getBool(_kShowTranslit) ?? defaults.showTransliteration,
+      showNiqqud: prefs.getBool(_kShowNiqqud) ?? defaults.showNiqqud,
       disableRootParallax: prefs.getBool(_kDisableParallax) ?? defaults.disableRootParallax,
       reviewIntensity: intensity,
       dayBoundaryHour: prefs.getInt(_kDayBoundaryHour) ?? defaults.dayBoundaryHour,
@@ -91,6 +96,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     prefs.setString(_kAppFont, s.appFont);
     prefs.setStringList(_kQuizFonts, s.quizFonts);
     prefs.setBool(_kShowTranslit, s.showTransliteration);
+    prefs.setBool(_kShowNiqqud, s.showNiqqud);
     prefs.setBool(_kDisableParallax, s.disableRootParallax);
     prefs.setString(_kReviewIntensity, s.reviewIntensity.name);
     prefs.setInt(_kDayBoundaryHour, s.dayBoundaryHour);
@@ -118,6 +124,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setAppFont(String v) => _update((s) => s.copyWith(appFont: v));
   void setQuizFonts(List<String> v) => _update((s) => s.copyWith(quizFonts: v));
   void setShowTransliteration(bool v) => _update((s) => s.copyWith(showTransliteration: v));
+  void setShowNiqqud(bool v) => _update((s) => s.copyWith(showNiqqud: v));
   void setDisableRootParallax(bool v) => _update((s) => s.copyWith(disableRootParallax: v));
   // fsrs_params snapshot is the frozen contract's only legal way to record an
   // intensity change (§4.1) -- never edit an existing row or touch Scheduler

@@ -1,6 +1,9 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
+import 'package:almi3/core/hebrew_sentence_util.dart';
 import 'package:almi3/core/icon_assets.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/widgets/bookmark_badge.dart';
 import 'package:almi3/view/widgets/fallback_warning_marker.dart';
@@ -100,14 +103,16 @@ class _VerbFormChipState extends State<VerbFormChip>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          widget.form.value,
-                          textDirection: TextDirection.rtl,
-                          style: GoogleFonts.rubik(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.1,
+                        Consumer(
+                          builder: (context, ref, _) => Text(
+                            hebrewText(widget.form.value, widget.form.valueKtivMale, ref.watch(showNiqqudProvider)),
+                            textDirection: TextDirection.rtl,
+                            style: GoogleFonts.rubik(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.1,
+                            ),
                           ),
                         ),
                         if (widget.form.translit.isNotEmpty)

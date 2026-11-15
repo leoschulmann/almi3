@@ -11,6 +11,8 @@ class VerbTable extends Table {
 
   TextColumn get value => text().withLength(min: 1, max: 255)();
 
+  TextColumn get valueKtivMale => text().withLength(min: 1, max: 255).nullable()();
+
   IntColumn get version => integer()();
 
   IntColumn get rootId => integer().references(RootTable, #id)();

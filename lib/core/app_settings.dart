@@ -8,6 +8,7 @@ class AppSettings {
   final String appFont;
   final List<String> quizFonts;
   final bool showTransliteration;
+  final bool showNiqqud;
   final bool disableRootParallax;
   final ReviewIntensity reviewIntensity;
   final int dayBoundaryHour;
@@ -26,6 +27,7 @@ class AppSettings {
     required this.appFont,
     required this.quizFonts,
     required this.showTransliteration,
+    required this.showNiqqud,
     required this.disableRootParallax,
     required this.reviewIntensity,
     required this.dayBoundaryHour,
@@ -45,6 +47,7 @@ class AppSettings {
     String? appFont,
     List<String>? quizFonts,
     bool? showTransliteration,
+    bool? showNiqqud,
     bool? disableRootParallax,
     ReviewIntensity? reviewIntensity,
     int? dayBoundaryHour,
@@ -64,6 +67,7 @@ class AppSettings {
       appFont: appFont ?? this.appFont,
       quizFonts: quizFonts ?? this.quizFonts,
       showTransliteration: showTransliteration ?? this.showTransliteration,
+      showNiqqud: showNiqqud ?? this.showNiqqud,
       disableRootParallax: disableRootParallax ?? this.disableRootParallax,
       reviewIntensity: reviewIntensity ?? this.reviewIntensity,
       dayBoundaryHour: dayBoundaryHour ?? this.dayBoundaryHour,
@@ -87,6 +91,7 @@ class AppSettings {
       appFont: kAppFonts.first,
       quizFonts: [kQuizFonts.first],
       showTransliteration: true,
+      showNiqqud: true,
       disableRootParallax: false,
       reviewIntensity: ReviewIntensity.normal,
       dayBoundaryHour: 4,

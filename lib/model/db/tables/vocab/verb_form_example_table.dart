@@ -6,6 +6,7 @@ class VerbFormExampleTable extends Table {
   IntColumn get id => integer()();
   IntColumn get verbFormId => integer().references(VerbFormTable, #id)();
   TextColumn get value => text().withLength(min: 1, max: 255)();
+  TextColumn get valueKtivMale => text().withLength(min: 1, max: 255).nullable()();
   TextColumn get file => text().withLength(min: 1, max: 255).nullable()();
   IntColumn get version => integer()();
 

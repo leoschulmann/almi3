@@ -1,5 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/hebrew_sentence_util.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:almi3/model/dto/example_display_dto.dart';
 import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 class ExampleBubble extends StatelessWidget {
   final ExampleDisplayDto example;
   final String formValue;
+  final String? formValueKtivMale;
   final String iconPath;
   final bool outlined;
 
@@ -16,6 +19,7 @@ class ExampleBubble extends StatelessWidget {
     super.key,
     required this.example,
     required this.formValue,
+    this.formValueKtivMale,
     required this.iconPath,
     this.outlined = false,
   });
@@ -51,8 +55,13 @@ class ExampleBubble extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _HighlightedSentence(
-                        sentence: example.sentence, formValue: formValue),
+                    Consumer(builder: (context, ref, _) {
+                      final show = ref.watch(showNiqqudProvider);
+                      return _HighlightedSentence(
+                        sentence: hebrewText(example.sentence, example.sentenceKtivMale, show),
+                        formValue: hebrewText(formValue, formValueKtivMale, show),
+                      );
+                    }),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,

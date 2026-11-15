@@ -3,6 +3,7 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/settings_page.dart';
+import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -50,18 +51,7 @@ class AlmiAppBar extends StatelessWidget implements PreferredSizeWidget {
             actions: [
               ...extraActions,
               if (showActions) ...[
-                AdaptiveIconButton(
-                  tooltip: l10n.toggleNiqqudTooltip,
-                  onPressed: () {/* TODO: toggle niqqud */},
-                  icon: const Text(
-                    'אָ',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.tekhelet,
-                    ),
-                  ),
-                ),
+                const NiqqudBtn(),
                 AdaptiveIconButton(
                   tooltip: l10n.settingsTooltip,
                   onPressed: () => showSettingsSheet(context),

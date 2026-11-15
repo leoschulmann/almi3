@@ -1,7 +1,9 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/core/enums.dart';
+import 'package:almi3/core/hebrew_sentence_util.dart';
 import 'package:almi3/core/icon_assets.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/example_page.dart';
@@ -88,14 +90,14 @@ class VerbPage extends ConsumerWidget {
   }
 }
 
-class _MainSection extends StatelessWidget {
+class _MainSection extends ConsumerWidget {
   final VerbDetailDto verb;
   final double? health;
 
   const _MainSection({required this.verb, required this.health});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final meta = [verb.root, ...verb.gizrahs, ...verb.preps].join(' · ');
 
     return Padding(
@@ -135,7 +137,7 @@ class _MainSection extends StatelessWidget {
           WordTitle(
             translations: verb.translations,
             translationsIsFallback: verb.translationsIsFallback,
-            hebrewValue: verb.value,
+            hebrewValue: hebrewText(verb.value, verb.valueKtivMale, ref.watch(showNiqqudProvider)),
             wordType: WordType.verb,
           ),
           const SizedBox(height: 16),

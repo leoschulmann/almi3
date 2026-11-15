@@ -2,6 +2,7 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/view/settings_page.dart';
 import 'package:almi3/core/logger.dart';
+import 'package:almi3/view/widgets/niqqud_btn.dart';
 import 'package:almi3/view/widgets/root_card.dart';
 import 'package:almi3/view/widgets/root_filter_bar.dart';
 import 'package:almi3/view/widgets/root_search_field.dart';
@@ -118,14 +119,7 @@ class _RootListPageState extends ConsumerState<RootListPage> {
         ),
       ),
       actions: [
-        AdaptiveIconButton(
-          tooltip: l10n.toggleNiqqudTooltip,
-          onPressed: () {/* TODO: toggle niqqud */},
-          icon: const Text(
-            'אָ',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: AppColors.tekhelet),
-          ),
-        ),
+        const NiqqudBtn(fontSize: 21),
         AdaptiveIconButton(
           tooltip: l10n.settingsTooltip,
           onPressed: () => showSettingsSheet(context),

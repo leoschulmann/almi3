@@ -8,6 +8,7 @@ class VerbFormTable extends Table {
   IntColumn get verbId => integer().references(VerbTable, #id)();
   IntColumn get version => integer()();
   TextColumn get value => text().withLength(min: 1, max: 255)();
+  TextColumn get valueKtivMale => text().withLength(min: 1, max: 255).nullable()();
   IntColumn get tense => integer()();
   IntColumn get person => integer()();
   IntColumn get plurality => integer()();

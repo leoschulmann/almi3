@@ -70,6 +70,7 @@ class _ExampleFormSectionState extends State<ExampleFormSection>
               child: ExampleBubble(
                 example: ex,
                 formValue: g.formValue,
+                formValueKtivMale: g.formValueKtivMale,
                 iconPath: iconPath,
                 outlined: _outlined,
               ),

@@ -11,6 +11,9 @@ class VerbSyncDto {
   @JsonKey(name: "v")
   final String value;
 
+  @JsonKey(name: "km")
+  final String? valueKtivMale;
+
   @JsonKey(name: "ver")
   final int version;
 
@@ -32,6 +35,7 @@ class VerbSyncDto {
   VerbSyncDto({
     required this.id,
     required this.value,
+    this.valueKtivMale,
     required this.version,
     required this.rootId,
     required this.binyanId,

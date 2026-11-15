@@ -11,3 +11,12 @@ int findFormTokenIndex(String sentence, String formValue) {
   final tokens = sentence.split(' ');
   return tokens.indexWhere((t) => stripHebrewPunct(t) == formValue);
 }
+
+/// Picks the Hebrew spelling to show: the ktiv male one (no niqqud, computed
+/// by the server) when niqqud is switched off, otherwise the voweled text.
+/// Falls back to the voweled text while the server has not computed [ktivMale].
+///
+/// The niqqud quiz (QuizType.niqqud) is about the vowels themselves: it must
+/// pass `showNiqqud: true` regardless of the user's setting.
+String hebrewText(String voweled, String? ktivMale, bool showNiqqud) =>
+    showNiqqud ? voweled : (ktivMale ?? voweled);

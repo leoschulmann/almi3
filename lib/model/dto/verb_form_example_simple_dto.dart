@@ -13,6 +13,9 @@ class VerbFormExampleSimpleDto {
   @JsonKey(name: 'e')
   final String value;
 
+  @JsonKey(name: 'km')
+  final String? valueKtivMale;
+
   @JsonKey(name: 'f')
   final String? file;
 
@@ -25,6 +28,7 @@ class VerbFormExampleSimpleDto {
     required this.id,
     required this.verbFormId,
     required this.value,
+    this.valueKtivMale,
     required this.file,
     required this.version,
     required this.translations,

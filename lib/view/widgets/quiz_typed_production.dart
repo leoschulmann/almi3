@@ -1,4 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/hebrew_sentence_util.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/model/fsrs/quiz_result.dart';
@@ -10,17 +13,17 @@ import 'package:flutter/services.dart';
 /// word. Produces a raw [QuizResult] on submit -- grading (gradeAnswer)
 /// happens under the hood in the session layer, never here. No
 /// Again/Hard/Good/Easy control anywhere in this widget.
-class QuizTypedProduction extends StatefulWidget {
+class QuizTypedProduction extends ConsumerStatefulWidget {
   final VerbDetailDto verb;
   final ValueChanged<QuizResult> onSubmit;
 
   const QuizTypedProduction({super.key, required this.verb, required this.onSubmit});
 
   @override
-  State<QuizTypedProduction> createState() => _QuizTypedProductionState();
+  ConsumerState<QuizTypedProduction> createState() => _QuizTypedProductionState();
 }
 
-class _QuizTypedProductionState extends State<QuizTypedProduction> {
+class _QuizTypedProductionState extends ConsumerState<QuizTypedProduction> {
   final _controller = TextEditingController();
   late final Stopwatch _stopwatch = Stopwatch()..start();
 
@@ -46,7 +49,8 @@ class _QuizTypedProductionState extends State<QuizTypedProduction> {
 
   void _submit() {
     final input = _controller.text.trim();
-    final correct = widget.verb.value.trim();
+    final correct =
+        hebrewText(widget.verb.value, widget.verb.valueKtivMale, ref.read(showNiqqudProvider)).trim();
     final exact = input == correct;
     final hadTypo = !exact && _isCloseTypo(input, correct);
 

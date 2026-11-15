@@ -1,5 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/core/hebrew_sentence_util.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/root_dto.dart';
 import 'package:almi3/view/verb_page.dart';
@@ -59,7 +61,7 @@ class WordPage extends ConsumerWidget {
           runSpacing: 10,
           children: state.words.map((w) {
             return WordChip(
-              hebrewText: w.value,
+              hebrewText: hebrewText(w.value, w.valueKtivMale, ref.watch(showNiqqudProvider)),
               translation: w.translation,
               isFallback: w.isFallback,
               type: WordType.verb,
