@@ -1,8 +1,8 @@
-import 'package:almi3/model/db/db.dart';
-import 'package:almi3/model/repository/binyan_repository.dart';
-import 'package:almi3/model/repository/gizrah_repo.dart';
-import 'package:almi3/model/repository/prep_repo.dart';
-import 'package:almi3/model/repository/root_repository.dart';
+import 'package:almi3/model/db/vocab_db.dart';
+import 'package:almi3/model/repository/vocab/binyan_repository.dart';
+import 'package:almi3/model/repository/vocab/gizrah_repo.dart';
+import 'package:almi3/model/repository/vocab/prep_repo.dart';
+import 'package:almi3/model/repository/vocab/root_repository.dart';
 import 'package:almi3/viewmodel/root_list_viewmodel.dart';
 import 'package:almi3/viewmodel/simple_sync_viewmodel.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
@@ -13,10 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Providers sanity check', () {
     late ProviderContainer container;
-    late AppDatabase testDb;
+    late VocabularyDatabase testDb;
 
     setUp(() {
-      testDb = AppDatabase(NativeDatabase.memory());
+      testDb = VocabularyDatabase(NativeDatabase.memory());
       container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(testDb),
@@ -31,7 +31,7 @@ void main() {
 
     test('appDatabaseProvider provides AppDatabase', () {
       final db = container.read(appDatabaseProvider);
-      expect(db, isA<AppDatabase>());
+      expect(db, isA<VocabularyDatabase>());
     });
 
     test('rootRepositoryProvider provides RootRepository', () {

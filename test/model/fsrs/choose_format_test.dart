@@ -1,0 +1,130 @@
+import 'dart:math';
+
+import 'package:almi3/model/fsrs/choose_format.dart';
+import 'package:almi3/model/fsrs/quiz_type.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fsrs/fsrs.dart' as fsrs;
+
+class _FixedRandom implements Random {
+  final double value;
+  const _FixedRandom(this.value);
+  @override
+  double nextDouble() => value;
+  @override
+  int nextInt(int max) => 0;
+  @override
+  bool nextBool() => false;
+}
+
+void main() {
+  group('chooseFormat', () {
+    test('isNew always returns null, regardless of state', () {
+      expect(
+        chooseFormat(isNew: true, state: fsrs.State.learning.value, step: 0, direction: directionRecognition),
+        isNull,
+      );
+      expect(
+        chooseFormat(isNew: true, state: fsrs.State.review.value, step: null, direction: directionProduction),
+        isNull,
+      );
+    });
+
+    test('early Learning -> mc2 per direction', () {
+      expect(
+        chooseFormat(isNew: false, state: fsrs.State.learning.value, step: 0, direction: directionRecognition),
+        QuizType.mc2Recognition,
+      );
+      expect(
+        chooseFormat(isNew: false, state: fsrs.State.learning.value, step: 0, direction: directionProduction),
+        QuizType.mc2Production,
+      );
+    });
+
+    test('late Learning -> mc4 per direction', () {
+      expect(
+        chooseFormat(isNew: false, state: fsrs.State.learning.value, step: 1, direction: directionRecognition),
+        QuizType.mc4Recognition,
+      );
+      expect(
+        chooseFormat(isNew: false, state: fsrs.State.learning.value, step: 1, direction: directionProduction),
+        QuizType.mc4Production,
+      );
+    });
+
+    test('Review production -> typedProduction/niqqud/cloze mix by weight (0.7/0.15/0.15), never preposition', () {
+      expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionProduction,
+          random: const _FixedRandom(0.0),
+        ),
+        QuizType.typedProduction,
+      );
+      expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionProduction,
+          random: const _FixedRandom(0.75),
+        ),
+        QuizType.niqqud,
+      );
+      expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionProduction,
+          random: const _FixedRandom(0.9),
+        ),
+        QuizType.cloze,
+      );
+      expect(
+        chooseFormat(isNew: false, state: fsrs.State.relearning.value, step: 0, direction: directionProduction),
+        isNot(QuizType.preposition),
+      );
+    });
+
+    test('Review recognition -> both mc4Recognition and listening reachable', () {
+      expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionRecognition,
+          random: const _FixedRandom(0.0),
+        ),
+        QuizType.listening,
+      );
+      expect(
+        chooseFormat(
+          isNew: false,
+          state: fsrs.State.review.value,
+          step: null,
+          direction: directionRecognition,
+          random: const _FixedRandom(0.99),
+        ),
+        QuizType.mc4Recognition,
+      );
+    });
+  });
+
+  group('chooseConjugationFormat', () {
+    test('isNew always returns null', () {
+      expect(chooseConjugationFormat(isNew: true, state: fsrs.State.learning.value), isNull);
+      expect(chooseConjugationFormat(isNew: true, state: fsrs.State.review.value), isNull);
+    });
+
+    test('Learning -> conjIdentify', () {
+      expect(chooseConjugationFormat(isNew: false, state: fsrs.State.learning.value), QuizType.conjIdentify);
+    });
+
+    test('Review/Relearning -> conjProduce', () {
+      expect(chooseConjugationFormat(isNew: false, state: fsrs.State.review.value), QuizType.conjProduce);
+      expect(chooseConjugationFormat(isNew: false, state: fsrs.State.relearning.value), QuizType.conjProduce);
+    });
+  });
+}

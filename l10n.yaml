@@ -1,0 +1,7 @@
+# output-dir inside lib/l10n (rather than the default synthetic
+# flutter_gen package) so the generated AppLocalizations sources are
+# gitignored like other generated code; see .gitignore.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-dir: lib/l10n

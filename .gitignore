@@ -146,3 +146,7 @@ Thumbs.db
 .env.local
 .env.*.local
 /**/*.g.dart
+
+# Generated intl localizations (from lib/l10n/*.arb via `flutter gen-l10n`)
+lib/l10n/app_localizations.dart
+lib/l10n/app_localizations_*.dart

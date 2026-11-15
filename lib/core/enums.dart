@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 enum GrammaticalPerson { none, first, second, third }
@@ -64,8 +65,49 @@ Plurality pluralityFromJson(int i) => Plurality.values[i];
 
 GrammaticalGender genderFromJson(int i) => GrammaticalGender.values[i];
 
-enum AppLanguage { en, ru }
+/// `dbCode` is the sole source of the uppercase `lang` value stored in
+/// content tables (e.g. `verb_t9n_table.lang`) -- never uppercase
+/// `AppLanguage.name` ad hoc, always go through this field.
+enum AppLanguage {
+  en(dbCode: 'EN'),
+  ru(dbCode: 'RU');
+
+  const AppLanguage({required this.dbCode});
+  final String dbCode;
+
+  /// Human-readable label, subject to the currently selected UI language --
+  /// callers must pass the [AppLocalizations] resolved from the live
+  /// `BuildContext`, never a cached/static instance.
+  String label(AppLocalizations l10n) => switch (this) {
+        AppLanguage.en => l10n.languageEnglish,
+        AppLanguage.ru => l10n.languageRussian,
+      };
+
+  Locale get locale => Locale(name);
+}
 
 enum AppTheme { light, dark, auto }
 
 enum ReviewIntensity { relaxed, normal, intense }
+
+/// Shared human-readable label for review intensity, used by both
+/// onboarding_page.dart and settings_page.dart -- one source, no second
+/// hardcoded copy. Never surfaces the underlying desired_retention number.
+/// Subject to the currently selected UI language -- callers must pass the
+/// [AppLocalizations] resolved from the live `BuildContext`.
+String intensityLabel(ReviewIntensity v, AppLocalizations l10n) {
+  switch (v) {
+    case ReviewIntensity.relaxed:
+      return l10n.intensityRelaxed;
+    case ReviewIntensity.normal:
+      return l10n.intensityNormal;
+    case ReviewIntensity.intense:
+      return l10n.intensityIntense;
+  }
+}
+
+/// Reserved sentinel for the single hardcoded debug deck covering all
+/// content, used until real `deck`/`deck_verb` schema exists (§9.1 defers
+/// semantic decks). Negative so it can never collide with a future real
+/// `deck` table PK (which would start at 1 via autoincrement).
+const int kDefaultDeckId = -1;

@@ -1,3 +1,4 @@
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class QuizPage extends StatelessWidget {
@@ -5,13 +6,14 @@ class QuizPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Quiz'),
+        title: Text(l10n.quizTitle),
       ),
-      body: const Center(
-        child: Text('Quiz Page'),
+      body: Center(
+        child: Text(l10n.quizPageBody),
       ),
     );
   }

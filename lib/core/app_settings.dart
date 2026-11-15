@@ -10,11 +10,15 @@ class AppSettings {
   final bool showTransliteration;
   final bool disableRootParallax;
   final ReviewIntensity reviewIntensity;
+  final int dayBoundaryHour;
+  final int newCardsPerDay;
+  final List<int> activeDeckIds;
   final bool dailyReminder;
   final TimeOfDay reminderTime;
   final bool autoplayAudio;
   final bool wifiOnlyDownloads;
   final DateTime? lastSyncedAt;
+  final bool onboardingComplete;
 
   const AppSettings({
     required this.language,
@@ -24,11 +28,15 @@ class AppSettings {
     required this.showTransliteration,
     required this.disableRootParallax,
     required this.reviewIntensity,
+    required this.dayBoundaryHour,
+    required this.newCardsPerDay,
+    required this.activeDeckIds,
     required this.dailyReminder,
     required this.reminderTime,
     required this.autoplayAudio,
     required this.wifiOnlyDownloads,
     required this.lastSyncedAt,
+    required this.onboardingComplete,
   });
 
   AppSettings copyWith({
@@ -39,12 +47,16 @@ class AppSettings {
     bool? showTransliteration,
     bool? disableRootParallax,
     ReviewIntensity? reviewIntensity,
+    int? dayBoundaryHour,
+    int? newCardsPerDay,
+    List<int>? activeDeckIds,
     bool? dailyReminder,
     TimeOfDay? reminderTime,
     bool? autoplayAudio,
     bool? wifiOnlyDownloads,
     DateTime? lastSyncedAt,
     bool clearLastSyncedAt = false,
+    bool? onboardingComplete,
   }) {
     return AppSettings(
       language: language ?? this.language,
@@ -54,18 +66,22 @@ class AppSettings {
       showTransliteration: showTransliteration ?? this.showTransliteration,
       disableRootParallax: disableRootParallax ?? this.disableRootParallax,
       reviewIntensity: reviewIntensity ?? this.reviewIntensity,
+      dayBoundaryHour: dayBoundaryHour ?? this.dayBoundaryHour,
+      newCardsPerDay: newCardsPerDay ?? this.newCardsPerDay,
+      activeDeckIds: activeDeckIds ?? this.activeDeckIds,
       dailyReminder: dailyReminder ?? this.dailyReminder,
       reminderTime: reminderTime ?? this.reminderTime,
       autoplayAudio: autoplayAudio ?? this.autoplayAudio,
       wifiOnlyDownloads: wifiOnlyDownloads ?? this.wifiOnlyDownloads,
       lastSyncedAt: clearLastSyncedAt ? null : (lastSyncedAt ?? this.lastSyncedAt),
+      onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
 
   static AppSettings defaultSettings() {
     return AppSettings(
-      language: WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'ru' 
-        ? AppLanguage.ru 
+      language: WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'ru'
+        ? AppLanguage.ru
         : AppLanguage.en,
       theme: AppTheme.auto,
       appFont: kAppFonts.first,
@@ -73,11 +89,20 @@ class AppSettings {
       showTransliteration: true,
       disableRootParallax: false,
       reviewIntensity: ReviewIntensity.normal,
+      dayBoundaryHour: 4,
+      newCardsPerDay: 10,
+      // Empty = unrestricted (all decks); semantic decks aren't implemented
+      // yet (§9.1), so this has no effect until deck membership queries exist.
+      activeDeckIds: const [],
       dailyReminder: true,
       reminderTime: const TimeOfDay(hour: 9, minute: 0),
       autoplayAudio: true,
       wifiOnlyDownloads: true,
       lastSyncedAt: null,
+      // Default false; app.dart derives true at startup for installs that
+      // already have an fsrs_params row (update without reinstall) before
+      // this pref existed -- see onboardingGateProvider.
+      onboardingComplete: false,
     );
   }
 }

@@ -1,0 +1,180 @@
+import 'package:almi3/core/app_settings.dart';
+import 'package:almi3/model/db/db_providers.dart';
+import 'package:almi3/model/db/user_db.dart';
+import 'package:almi3/model/fsrs/answer_log_codes.dart';
+import 'package:almi3/model/fsrs/lexeme_introduction.dart';
+import 'package:almi3/model/fsrs/lexeme_status_actions.dart';
+import 'package:almi3/model/fsrs/quiz_type.dart' show directionProduction, directionRecognition;
+import 'package:almi3/viewmodel/settings_notifier.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fsrs/fsrs.dart' as fsrs;
+
+class _FixedSettingsNotifier extends SettingsNotifier {
+  @override
+  AppSettings build() => AppSettings.defaultSettings();
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('LexemeStatusActionsService', () {
+    late UserDatabase db;
+    late ProviderContainer container;
+    late LexemeStatusActionsService service;
+    late LexemeIntroductionService introductionService;
+
+    setUp(() {
+      db = UserDatabase(NativeDatabase.memory());
+      container = ProviderContainer(
+        overrides: [
+          userDbProvider.overrideWithValue(db),
+          settingsProvider.overrideWith(() => _FixedSettingsNotifier()),
+        ],
+      );
+      service = container.read(lexemeStatusActionsServiceProvider);
+      introductionService = container.read(lexemeIntroductionServiceProvider);
+    });
+
+    tearDown(() async {
+      container.dispose();
+      await db.close();
+    });
+
+    test('markLexemeKnown runs exactly one Easy review and logs exactly one row', () async {
+      final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+
+      final result = await service.markLexemeKnown(lexemeProgressId);
+      expect(result, isNotNull);
+
+      final cardRow = (await db.select(db.cardFsrsTable).get()).firstWhere((r) => r.id == result!.cardId);
+      expect(cardRow.reps, 1);
+      expect(cardRow.stability, isNotNull);
+      expect(cardRow.difficulty, isNotNull);
+      expect(cardRow.lastReview, isNotNull);
+
+      final logs = await db.select(db.answerLogTable).get();
+      expect(logs, hasLength(1));
+      final log = logs.single;
+      expect(log.source, answerSourceAssertKnown);
+      expect(log.quizType, quizTypeNoOp);
+      expect(log.rating, 4);
+      expect(log.wasCorrect, isTrue);
+      expect(log.countedInFsrs, isTrue);
+    });
+
+    test('markLexemeKnown graduating recognition to Review spawns the production card (§3.3)', () async {
+      final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+
+      await service.markLexemeKnown(lexemeProgressId);
+
+      final lexicalCards = await db.select(db.lexicalCardTable).get()
+        ..sort((a, b) => a.cardId.compareTo(b.cardId));
+      expect(lexicalCards, hasLength(2));
+      expect(lexicalCards.map((c) => c.direction).toSet(), {directionRecognition, directionProduction});
+
+      final productionCard = lexicalCards.firstWhere((c) => c.direction == directionProduction);
+      final productionCardRow =
+          (await db.select(db.cardFsrsTable).get()).firstWhere((r) => r.id == productionCard.cardId);
+      expect(productionCardRow.reps, 0); // untouched: introducing != reviewing
+      expect(productionCardRow.lastReview, isNull);
+    });
+
+    test('undoMarkKnown restores the card to New and deletes the log row (not a compensating Again)', () async {
+      final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+      final beforeRow = (await db.select(db.cardFsrsTable).get()).single;
+
+      final result = await service.markLexemeKnown(lexemeProgressId);
+      await service.undoMarkKnown(result!);
+
+      final afterRow =
+          (await db.select(db.cardFsrsTable).get()).firstWhere((r) => r.id == result.cardId);
+      expect(afterRow.reps, beforeRow.reps);
+      expect(afterRow.stability, beforeRow.stability);
+      expect(afterRow.difficulty, beforeRow.difficulty);
+      expect(afterRow.lastReview, beforeRow.lastReview);
+      expect(afterRow.state, beforeRow.state);
+
+      final logs = await db.select(db.answerLogTable).get();
+      expect(logs, isEmpty);
+
+      // undoMarkKnown does not retract the production card it caused to be
+      // spawned (§10 only governs the recognition review's own log/card) —
+      // it's left as a harmless, untouched New card.
+      final cardRows = await db.select(db.cardFsrsTable).get();
+      expect(cardRows, hasLength(2));
+    });
+
+    test('markLexemeKnown returns null once every card on the lexeme has graduated', () async {
+      final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+
+      await service.markLexemeKnown(lexemeProgressId); // graduates recognition, spawns production
+      await service.markLexemeKnown(lexemeProgressId); // graduates production (still New until now)
+
+      final third = await service.markLexemeKnown(lexemeProgressId);
+      expect(third, isNull);
+    });
+
+    test('ignoreLexeme/unignoreLexeme only flip the status flag, no card_fsrs/answer_log writes', () async {
+      final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+
+      await service.ignoreLexeme(lexemeProgressId);
+      var progress = await db.select(db.lexemeProgressTable).get();
+      expect(progress.single.status, lexemeStatusIgnored);
+
+      await service.unignoreLexeme(lexemeProgressId);
+      progress = await db.select(db.lexemeProgressTable).get();
+      expect(progress.single.status, lexemeStatusActive);
+
+      final logs = await db.select(db.answerLogTable).get();
+      expect(logs, isEmpty);
+      final cardRow = (await db.select(db.cardFsrsTable).get()).single;
+      expect(cardRow.reps, 0);
+    });
+
+    group('resetKnownToNew', () {
+      test('resets an assertKnown card back to fresh New and deletes the log (matrix: "Вернуть" on "Известные слова")', () async {
+        final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+        final markResult = await service.markLexemeKnown(lexemeProgressId);
+        expect(markResult, isNotNull);
+
+        await service.resetKnownToNew(lexemeProgressId);
+
+        final logs = await db.select(db.answerLogTable).get();
+        expect(logs, isEmpty);
+
+        final cardRow = (await db.select(db.cardFsrsTable).get()).firstWhere((r) => r.id == markResult!.cardId);
+        expect(cardRow.reps, 0);
+        expect(cardRow.lapses, 0);
+        expect(cardRow.stability, isNull);
+        expect(cardRow.difficulty, isNull);
+        expect(cardRow.lastReview, isNull);
+        expect(cardRow.state, fsrs.State.learning.value); // fresh Card.create() default
+      });
+
+      test('is a no-op when the lexeme has no assertKnown log', () async {
+        final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+        final beforeRow = (await db.select(db.cardFsrsTable).get()).single;
+
+        await service.resetKnownToNew(lexemeProgressId);
+
+        final afterRow = (await db.select(db.cardFsrsTable).get()).single;
+        expect(afterRow.reps, beforeRow.reps);
+        expect(afterRow.lastReview, beforeRow.lastReview);
+        final logs = await db.select(db.answerLogTable).get();
+        expect(logs, isEmpty);
+      });
+
+      test('does not touch lexeme_progress.status (§10: not modeled there)', () async {
+        final lexemeProgressId = await introductionService.introduceLexeme(0, 1);
+        await service.markLexemeKnown(lexemeProgressId);
+
+        await service.resetKnownToNew(lexemeProgressId);
+
+        final progress = (await db.select(db.lexemeProgressTable).get()).single;
+        expect(progress.status, lexemeStatusActive);
+      });
+    });
+  });
+}

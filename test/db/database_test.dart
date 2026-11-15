@@ -1,13 +1,13 @@
-import 'package:almi3/model/db/db.dart';
+import 'package:almi3/model/db/vocab_db.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AppDatabase', () {
-    late AppDatabase db;
+    late VocabularyDatabase db;
 
     setUp(() {
-      db = AppDatabase(NativeDatabase.memory());
+      db = VocabularyDatabase(NativeDatabase.memory());
     });
 
     tearDown(() async {

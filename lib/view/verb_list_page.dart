@@ -1,3 +1,4 @@
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class VerbListPage extends StatelessWidget {
@@ -5,12 +6,13 @@ class VerbListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Verbs'),
+        title: Text(l10n.verbsTitle),
       ),
-      body: const Center(child: Text('Verbs Page')),
+      body: Center(child: Text(l10n.verbsPageBody)),
     );
   }
 }

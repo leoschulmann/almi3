@@ -1,4 +1,5 @@
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 enum RootFilter { all, saved, toReview }
@@ -11,11 +12,12 @@ class RootFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AdaptiveSegmentedControl<RootFilter>(
-      segments: const [
-        (RootFilter.all, 'All'),
-        (RootFilter.saved, 'Saved'),
-        (RootFilter.toReview, 'To review'),
+      segments: [
+        (RootFilter.all, l10n.filterAll),
+        (RootFilter.saved, l10n.filterSaved),
+        (RootFilter.toReview, l10n.filterToReview),
       ],
       selected: filter,
       onChanged: onChanged,

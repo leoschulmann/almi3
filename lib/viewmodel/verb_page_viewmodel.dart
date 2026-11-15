@@ -1,7 +1,11 @@
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/logger.dart';
-import 'package:almi3/model/repository/bookmark_repository.dart';
-import 'package:almi3/model/repository/verb_repository.dart';
+import 'package:almi3/model/fsrs/health.dart';
+import 'package:almi3/model/fsrs/lexeme_selection.dart' show entityTypeVerb;
+import 'package:almi3/model/repository/user/bookmark_repository.dart';
+import 'package:almi3/model/repository/user/lexeme_progress_repository.dart';
+import 'package:almi3/model/repository/vocab/verb_repository.dart';
+import 'package:almi3/viewmodel/session_notifier.dart' show contentLangProvider;
 import 'package:almi3/viewmodel/state/verb_page_state.dart';
 import 'package:almi3/viewmodel/sync_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,13 +19,17 @@ class VerbPageNotifier extends Notifier<VerbPageState> {
   final int _verbId;
   late VerbRepository _verbRepo;
   late BookmarkRepository _bookmarkRepo;
-
-  static const String _lang = 'EN';
+  late LexemeProgressRepository _lexemeProgressRepo;
+  late HealthService _healthService;
+  late String _lang;
 
   @override
   VerbPageState build() {
     _verbRepo = ref.watch(verbRepositoryProvider);
     _bookmarkRepo = ref.watch(bookmarkRepositoryProvider);
+    _lexemeProgressRepo = ref.watch(lexemeProgressRepositoryProvider);
+    _healthService = ref.watch(healthServiceProvider);
+    _lang = ref.watch(contentLangProvider);
     Future.microtask(_load);
     return const VerbPageState(isLoading: true);
   }
@@ -30,11 +38,28 @@ class VerbPageNotifier extends Notifier<VerbPageState> {
     try {
       final detail = await _verbRepo.getVerbDetail(_verbId, _lang);
       final bookmarkedFormIds = await _bookmarkRepo.getBookmarkedIds(BookmarkType.verbForm);
-      state = state.copyWith(verb: detail, isLoading: false, bookmarkedFormIds: bookmarkedFormIds);
+      // Health is a display-only overlay on top of the core verb page --
+      // a failure computing it (e.g. transient DB error) must not take
+      // down the whole page, so it's isolated from the outer try/catch.
+      double? health;
+      try {
+        health = await _loadHealth();
+      } catch (e, st) {
+        logger.e('VerbPageNotifier._loadHealth error', error: e, stackTrace: st);
+      }
+      state = state.copyWith(verb: detail, isLoading: false, bookmarkedFormIds: bookmarkedFormIds, health: health);
     } catch (e, st) {
       logger.e('VerbPageNotifier._load error', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false, errMsg: e.toString());
     }
+  }
+
+  // No FK between vocab.db and user.db -- join by soft-ref entity id, same
+  // pattern as home_notifier.dart's progressStatusProvider.
+  Future<double?> _loadHealth() async {
+    final progress = await _lexemeProgressRepo.getByEntity(entityTypeVerb, _verbId);
+    if (progress == null) return null;
+    return _healthService.lexemeHealthWithBonus(progress.id);
   }
 
   Future<void> toggleFormBookmark(int formId) async {

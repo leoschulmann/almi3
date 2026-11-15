@@ -2,6 +2,7 @@ import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/icon_assets.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/model/dto/verb_detail_dto.dart';
 import 'package:almi3/view/example_page.dart';
 import 'package:almi3/view/widgets/almi_app_bar.dart';
@@ -27,7 +28,7 @@ class VerbPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AlmiAppBar(
-        title: Text('verb - $rootValue', style: const TextStyle(fontSize: 16)),
+        title: Text(AppLocalizations.of(context)!.verbPageTitle(rootValue), style: const TextStyle(fontSize: 16)),
       ),
       body: _buildBody(context, ref, state),
     );
@@ -35,15 +36,17 @@ class VerbPage extends ConsumerWidget {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, VerbPageState state) {
     if (state.isLoading) return const Center(child: CircularProgressIndicator());
-    if (state.errMsg != null) return Center(child: Text('Error: ${state.errMsg}'));
+    if (state.errMsg != null) {
+      return Center(child: Text(AppLocalizations.of(context)!.errorWithMessage(state.errMsg!)));
+    }
     final verb = state.verb;
-    if (verb == null) return const Center(child: Text('Not found'));
+    if (verb == null) return Center(child: Text(AppLocalizations.of(context)!.notFound));
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _MainSection(verb: verb),
+          _MainSection(verb: verb, health: state.health),
           ..._buildTenseSections(context, ref, state, verb),
           const SizedBox(height: 32),
         ],
@@ -87,8 +90,9 @@ class VerbPage extends ConsumerWidget {
 
 class _MainSection extends StatelessWidget {
   final VerbDetailDto verb;
+  final double? health;
 
-  const _MainSection({required this.verb});
+  const _MainSection({required this.verb, required this.health});
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +110,7 @@ class _MainSection extends StatelessWidget {
               children: [
                 Align(
                   alignment: Alignment.topLeft,
-                  child: SvgPicture.asset(heartIconAsset(0), width: 42, height: 36),
+                  child: SvgPicture.asset(heartIconAsset(heartHealthLevel(health)), width: 42, height: 36),
                 ),
                 Align(
                   alignment: Alignment.topCenter,
@@ -128,7 +132,12 @@ class _MainSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          WordTitle(translations: verb.translations, hebrewValue: verb.value, wordType: WordType.verb),
+          WordTitle(
+            translations: verb.translations,
+            translationsIsFallback: verb.translationsIsFallback,
+            hebrewValue: verb.value,
+            wordType: WordType.verb,
+          ),
           const SizedBox(height: 16),
         ],
       ),

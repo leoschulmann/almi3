@@ -1,5 +1,7 @@
 import 'package:almi3/core/app_settings.dart';
 import 'package:almi3/core/enums.dart';
+import 'package:almi3/model/fsrs/scheduler_provider.dart';
+import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,12 +23,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kShowTranslit = 'settings.showTransliteration';
   static const _kDisableParallax = 'settings.disableRootParallax';
   static const _kReviewIntensity = 'settings.reviewIntensity';
+  static const _kDayBoundaryHour = 'settings.dayBoundaryHour';
+  static const _kNewCardsPerDay = 'settings.newCardsPerDay';
+  static const _kActiveDeckIds = 'settings.activeDeckIds';
   static const _kDailyReminder = 'settings.dailyReminder';
   static const _kReminderHour = 'settings.reminderHour';
   static const _kReminderMinute = 'settings.reminderMinute';
   static const _kAutoplay = 'settings.autoplayAudio';
   static const _kWifiOnly = 'settings.wifiOnlyDownloads';
   static const _kLastSyncedAt = 'settings.lastSyncedAt';
+  static const _kOnboardingComplete = 'settings.onboardingComplete';
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
 
@@ -63,6 +69,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
       showTransliteration: prefs.getBool(_kShowTranslit) ?? defaults.showTransliteration,
       disableRootParallax: prefs.getBool(_kDisableParallax) ?? defaults.disableRootParallax,
       reviewIntensity: intensity,
+      dayBoundaryHour: prefs.getInt(_kDayBoundaryHour) ?? defaults.dayBoundaryHour,
+      newCardsPerDay: prefs.getInt(_kNewCardsPerDay) ?? defaults.newCardsPerDay,
+      activeDeckIds: prefs.getStringList(_kActiveDeckIds)?.map(int.parse).toList() ?? defaults.activeDeckIds,
       dailyReminder: prefs.getBool(_kDailyReminder) ?? defaults.dailyReminder,
       reminderTime: TimeOfDay(
         hour: prefs.getInt(_kReminderHour) ?? defaults.reminderTime.hour,
@@ -71,6 +80,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       autoplayAudio: prefs.getBool(_kAutoplay) ?? defaults.autoplayAudio,
       wifiOnlyDownloads: prefs.getBool(_kWifiOnly) ?? defaults.wifiOnlyDownloads,
       lastSyncedAt: lastSyncMs != null ? DateTime.fromMillisecondsSinceEpoch(lastSyncMs) : null,
+      onboardingComplete: prefs.getBool(_kOnboardingComplete) ?? defaults.onboardingComplete,
     );
   }
 
@@ -83,6 +93,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
     prefs.setBool(_kShowTranslit, s.showTransliteration);
     prefs.setBool(_kDisableParallax, s.disableRootParallax);
     prefs.setString(_kReviewIntensity, s.reviewIntensity.name);
+    prefs.setInt(_kDayBoundaryHour, s.dayBoundaryHour);
+    prefs.setInt(_kNewCardsPerDay, s.newCardsPerDay);
+    prefs.setStringList(_kActiveDeckIds, s.activeDeckIds.map((id) => id.toString()).toList());
     prefs.setBool(_kDailyReminder, s.dailyReminder);
     prefs.setInt(_kReminderHour, s.reminderTime.hour);
     prefs.setInt(_kReminderMinute, s.reminderTime.minute);
@@ -91,6 +104,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     if (s.lastSyncedAt != null) {
       prefs.setInt(_kLastSyncedAt, s.lastSyncedAt!.millisecondsSinceEpoch);
     }
+    prefs.setBool(_kOnboardingComplete, s.onboardingComplete);
   }
 
   void _update(AppSettings Function(AppSettings) updater) {
@@ -105,10 +119,26 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setQuizFonts(List<String> v) => _update((s) => s.copyWith(quizFonts: v));
   void setShowTransliteration(bool v) => _update((s) => s.copyWith(showTransliteration: v));
   void setDisableRootParallax(bool v) => _update((s) => s.copyWith(disableRootParallax: v));
-  void setReviewIntensity(ReviewIntensity v) => _update((s) => s.copyWith(reviewIntensity: v));
+  // fsrs_params snapshot is the frozen contract's only legal way to record an
+  // intensity change (§4.1) -- never edit an existing row or touch Scheduler
+  // fields directly. Same helper backs onboarding's initial insert.
+  Future<void> setReviewIntensity(ReviewIntensity v) async {
+    await ref
+        .read(fsrsParamsRepositoryProvider)
+        .snapshotIfChanged(desiredRetentionForIntensity(v));
+    _update((s) => s.copyWith(reviewIntensity: v));
+  }
+  void setDayBoundaryHour(int v) => _update((s) => s.copyWith(dayBoundaryHour: v));
+  void setNewCardsPerDay(int v) => _update((s) => s.copyWith(newCardsPerDay: v));
+  void setActiveDeckIds(List<int> v) => _update((s) => s.copyWith(activeDeckIds: v));
   void setDailyReminder(bool v) => _update((s) => s.copyWith(dailyReminder: v));
   void setReminderTime(TimeOfDay v) => _update((s) => s.copyWith(reminderTime: v));
   void setAutoplayAudio(bool v) => _update((s) => s.copyWith(autoplayAudio: v));
   void setWifiOnlyDownloads(bool v) => _update((s) => s.copyWith(wifiOnlyDownloads: v));
   void recordSync() => _update((s) => s.copyWith(lastSyncedAt: DateTime.now()));
+
+  /// Marks onboarding complete. Also used by app.dart's startup gate to
+  /// persist the derived-true case (update without reinstall) without
+  /// re-running onboarding's own confirm() flow.
+  void setOnboardingComplete(bool v) => _update((s) => s.copyWith(onboardingComplete: v));
 }

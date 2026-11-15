@@ -4,10 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/enums.dart';
 import 'bookmark_badge.dart';
+import 'fallback_warning_marker.dart';
 
 class WordChip extends StatefulWidget {
   final String hebrewText;
   final String translation;
+  final bool isFallback;
   final WordType type;
   final bool isBookmarked;
   final VoidCallback? onBookmarkToggle;
@@ -17,6 +19,7 @@ class WordChip extends StatefulWidget {
     super.key,
     required this.hebrewText,
     required this.translation,
+    this.isFallback = false,
     required this.type,
     this.isBookmarked = false,
     this.onBookmarkToggle,
@@ -94,6 +97,10 @@ class _WordChipState extends State<WordChip>
                   ),
                   if (widget.translation.isNotEmpty) ...[
                     const SizedBox(width: 9),
+                    if (widget.isFallback) ...[
+                      const FallbackWarningMarker(size: 11),
+                      const SizedBox(width: 2),
+                    ],
                     Text(
                       widget.translation,
                       style: TextStyle(

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:almi3/view/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +25,7 @@ class AlmiAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: ClipRect(
@@ -49,7 +51,7 @@ class AlmiAppBar extends StatelessWidget implements PreferredSizeWidget {
               ...extraActions,
               if (showActions) ...[
                 AdaptiveIconButton(
-                  tooltip: 'Toggle niqqud',
+                  tooltip: l10n.toggleNiqqudTooltip,
                   onPressed: () {/* TODO: toggle niqqud */},
                   icon: const Text(
                     'אָ',
@@ -61,7 +63,7 @@ class AlmiAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
                 AdaptiveIconButton(
-                  tooltip: 'Settings',
+                  tooltip: l10n.settingsTooltip,
                   onPressed: () => showSettingsSheet(context),
                   icon: const Icon(
                     Icons.settings_outlined,

@@ -1,4 +1,5 @@
 import 'package:almi3/core/app_colors.dart';
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class RootSearchField extends StatelessWidget {
@@ -23,9 +24,9 @@ class RootSearchField extends StatelessWidget {
             child: TextField(
               controller: controller,
               style: const TextStyle(fontSize: 16, color: AppColors.ink),
-              decoration: const InputDecoration(
-                hintText: 'Search roots',
-                hintStyle: TextStyle(fontSize: 16, color: AppColors.inkSecondary),
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.searchRootsHint,
+                hintStyle: const TextStyle(fontSize: 16, color: AppColors.inkSecondary),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,

@@ -1,3 +1,4 @@
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,9 +12,10 @@ class SyncPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final SyncViewmodelState state = ref.watch(simpleSyncViewmodelProvider);
     final SimpleSyncViewmodelNotifier notifier = ref.read(simpleSyncViewmodelProvider.notifier);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.inversePrimary, title: const Text('Sync')),
+      appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.inversePrimary, title: Text(l10n.syncPageTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -33,7 +35,7 @@ class SyncPage extends ConsumerWidget {
               ElevatedButton(
                 onPressed: state.isLoading ? null : () => notifier.fetchAndInsertFromApi(),
                 style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24)),
-                child: const Text('Synchronize', style: TextStyle(fontSize: 18)),
+                child: Text(l10n.synchronizeButton, style: const TextStyle(fontSize: 18)),
               ),
             ],
           ),
@@ -43,13 +45,14 @@ class SyncPage extends ConsumerWidget {
   }
 
   Widget _buildStatusContent(BuildContext context, SyncViewmodelState state) {
+    final l10n = AppLocalizations.of(context)!;
     if (state.isLoading) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
-          Text('Synchronizing...', style: Theme.of(context).textTheme.bodyLarge),
+          Text(l10n.synchronizingEllipsis, style: Theme.of(context).textTheme.bodyLarge),
         ],
       );
     }
@@ -61,7 +64,7 @@ class SyncPage extends ConsumerWidget {
           Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
           const SizedBox(height: 16),
           Text(
-            'Error',
+            l10n.syncErrorTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.error),
           ),
           const SizedBox(height: 8),
@@ -80,14 +83,14 @@ class SyncPage extends ConsumerWidget {
           const SizedBox(height: 16),
           Icon(Icons.check_circle_outline, size: 48, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 16),
-          Text('Successfully synchronized', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.successfullySynchronized, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
-          _buildStatRow(context, 'Inserted:', state.inserted),
-          _buildStatRow(context, 'Updated:', state.updated),
-          _buildStatRow(context, 'Skipped:', state.skipped),
+          _buildStatRow(context, l10n.insertedLabel, state.inserted),
+          _buildStatRow(context, l10n.updatedLabel, state.updated),
+          _buildStatRow(context, l10n.skippedLabel, state.skipped),
           const SizedBox(height: 8),
           Text(
-            'Total: ${state.total} items',
+            l10n.totalItemsCount(state.total),
             style: Theme.of(
               context,
             ).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
@@ -97,7 +100,7 @@ class SyncPage extends ConsumerWidget {
       );
     }
 
-    return Text('Ready to synchronize', style: Theme.of(context).textTheme.bodyLarge);
+    return Text(l10n.readyToSynchronize, style: Theme.of(context).textTheme.bodyLarge);
   }
 
   Widget _buildStatRow(BuildContext context, String label, int value) {

@@ -1,6 +1,7 @@
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/hebrew_sentence_util.dart';
 import 'package:almi3/model/dto/example_display_dto.dart';
+import 'package:almi3/view/widgets/fallback_warning_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,15 +54,26 @@ class ExampleBubble extends StatelessWidget {
                     _HighlightedSentence(
                         sentence: example.sentence, formValue: formValue),
                     const SizedBox(height: 4),
-                    Text(
-                      example.translation,
-                      textAlign: TextAlign.end,
-                      style: GoogleFonts.rubik(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w300,
-                        fontStyle: FontStyle.italic,
-                        color: AppColors.textSecondary,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (example.translation.isNotEmpty && example.isFallback) ...[
+                          const FallbackWarningMarker(size: 11),
+                          const SizedBox(width: 2),
+                        ],
+                        Flexible(
+                          child: Text(
+                            example.translation,
+                            textAlign: TextAlign.end,
+                            style: GoogleFonts.rubik(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w300,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

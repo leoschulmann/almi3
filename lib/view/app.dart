@@ -1,8 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:almi3/core/app_colors.dart';
 import 'package:almi3/core/enums.dart';
 import 'package:almi3/core/platform_ui.dart';
+import 'package:almi3/l10n/app_localizations.dart';
+import 'package:almi3/model/repository/user/fsrs_params_repository.dart';
+import 'package:almi3/view/onboarding_page.dart';
 import 'package:almi3/viewmodel/settings_notifier.dart';
 import 'package:almi3/view/root_list_page.dart';
 import 'package:almi3/view/widgets/browse_popup_menu.dart';
@@ -10,8 +14,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'learn_page.dart';
+import 'home_page.dart';
 import 'quiz_page.dart';
+
+/// Resolves whether onboarding is complete, deriving true for installs that
+/// update without reinstalling: onboardingComplete unset in prefs but an
+/// fsrs_params row already exists (an earlier first-run insert happened
+/// before this pref existed). Purely derives the bool from state it watches
+/// -- it never writes to settingsProvider itself (which it also watches),
+/// so it can't trigger an extra rebuild of its own. Never touches
+/// schedulerProvider -- only the repository -- so onboarding's own
+/// first-run insert (via confirm()) can't race it. The migration re-checks
+/// getLatest() on every cold start until onboarding's own confirm() (or the
+/// user finishing onboarding) persists onboardingComplete in prefs.
+final onboardingGateProvider = FutureProvider<bool>((ref) async {
+  final alreadyComplete = ref.watch(settingsProvider.select((s) => s.onboardingComplete));
+  if (alreadyComplete) return true;
+
+  final latest = await ref.watch(fsrsParamsRepositoryProvider).getLatest();
+  return latest != null;
+});
 
 class App extends ConsumerWidget {
   const App({super.key});
@@ -25,14 +47,48 @@ class App extends ConsumerWidget {
       AppTheme.auto  => ThemeMode.system,
     };
 
+    final appLocale = ref.watch(settingsProvider.select((s) => s.language.locale));
+
+    final onboardingGate = ref.watch(onboardingGateProvider);
+
     return MaterialApp(
       title: 'almi yaha',
       themeMode: themeMode,
+      locale: appLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.tekhelet)),
       darkTheme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.tekhelet, brightness: Brightness.dark)),
       home: CupertinoTheme(
         data: const CupertinoThemeData(primaryColor: AppColors.tekhelet),
-        child: const MainNavigation(),
+        child: onboardingGate.when(
+          data: (complete) => complete ? const MainNavigation() : const OnboardingPage(),
+          loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+          error: (error, stackTrace) {
+            debugPrint('onboardingGateProvider failed: $error\n$stackTrace');
+            final l10n = AppLocalizations.of(context)!;
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(l10n.loadDataErrorMessage),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(onboardingGateProvider),
+                      child: Text(l10n.retryButton),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -61,7 +117,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _roots = const [
     RootListPage(),
-    LearnPage(),
+    HomePage(),
     QuizPage(),
   ];
 
@@ -127,7 +183,7 @@ class _MainNavigationState extends State<MainNavigation> {
           selectedIndex: _selectedIndex,
           browseNavKey: _browseNavKey,
           onTap: (idx) {
-            // Tapping Browse always resets it to RootListPage.
+            // Tapping Roots always resets it to RootListPage.
             if (idx == 0) {
               _navigatorKeys[0].currentState?.popUntil((route) => route.isFirst);
               setState(() => _browseMode = BrowseMode.allRoots);
@@ -159,14 +215,14 @@ class _CustomBottomNav extends StatelessWidget {
     required this.onBrowseLongPress,
   });
 
-  static const _items = [
-    (icon: Icons.book, label: 'Browse'),
-    (icon: Icons.school, label: 'Learn'),
-    (icon: Icons.quiz, label: 'Quiz'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final items = [
+      (icon: Icons.spa, label: l10n.rootsTitle),
+      (icon: Icons.menu_book, label: l10n.learnTitle),
+      (icon: Icons.bolt, label: l10n.quizTitle),
+    ];
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     const selectedColor = AppColors.tekhelet;
     const unselectedColor = AppColors.inkSecondary;
@@ -184,8 +240,8 @@ class _CustomBottomNav extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.only(bottom: bottomPadding),
           child: Row(
-            children: List.generate(_items.length, (i) {
-              final item = _items[i];
+            children: List.generate(items.length, (i) {
+              final item = items[i];
               final isSelected = selectedIndex == i;
               final color = isSelected ? selectedColor : unselectedColor;
               final isBrowse = i == 0;

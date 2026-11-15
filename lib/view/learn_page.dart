@@ -1,3 +1,4 @@
+import 'package:almi3/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class LearnPage extends StatelessWidget {
@@ -5,13 +6,14 @@ class LearnPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Learn'),
+        title: Text(l10n.learnTitle),
       ),
-      body: const Center(
-        child: Text('Learn Page'),
+      body: Center(
+        child: Text(l10n.learnPageBody),
       ),
     );
   }
